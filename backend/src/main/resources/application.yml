@@ -32,16 +32,20 @@ spring:
       hibernate:
         format_sql: true
 
+  ai:
+    openai:
+      api-key: b8a3e137da074c25a8a5dd54cdbe6e5d.FfJ77oKfq5oVBpgj
+      base-url: https://open.bigmodel.cn/api/paas/v4
+      chat:
+        model: GLM-4.7-FlashX
+        options:
+          temperature: 0.3
+          max-tokens: 4096
+
 tushare:
   api-url: https://api.tushare.pro
   token: e0dbbd8c6800d855f7d12c48b0a13a1131d46438b4e80b01b59dd5b5
   stock-basic-csv: /app/static-data/tushare_stock_basic.csv
-
-ai:
-  siliconflow:
-    api-key: b8a3e137da074c25a8a5dd54cdbe6e5d.FfJ77oKfq5oVBpgj
-    base-url: https://open.bigmodel.cn/api/paas/v4
-    model: GLM-4.7-FlashX
 
 management:
   endpoints:

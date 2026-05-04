@@ -1,5 +1,3 @@
-import { UnauthorizedError } from './client'
-
 export interface ApiResponse<T> {
   code: number
   msg: string
@@ -33,6 +31,13 @@ export async function fetchJson<T>(url: string, options?: RequestInit): Promise<
     throw new Error(body.msg || `HTTP ${res.status}`)
   }
   return res.json()
+}
+
+export class UnauthorizedError extends Error {
+  constructor(msg: string) {
+    super(msg)
+    this.name = 'UnauthorizedError'
+  }
 }
 
 export class ForbiddenError extends Error {

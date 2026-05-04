@@ -7,10 +7,15 @@ import com.tradingx.service.AiStrategyService;
 import com.tradingx.service.StrategyService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @RestController
@@ -73,6 +78,50 @@ public class StrategyController {
                 "valid", result.valid,
                 "compileError", result.compileError != null ? result.compileError : ""
         ));
+    }
+
+    @PostMapping(value = "/ai-generate-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter aiGenerateStream(@RequestBody Map<String, String> request, HttpSession session) {
+        String buyDesc = request.get("buyDesc");
+        String sellDesc = request.get("sellDesc");
+
+        SseEmitter emitter = new SseEmitter(300000L);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            try {
+                if (buyDesc == null || buyDesc.isBlank() || sellDesc == null || sellDesc.isBlank()) {
+                    emitter.send(SseEmitter.event().name("error").data("请输入买入和卖出策略描述"));
+                    emitter.complete();
+                    return;
+                }
+
+                AiStrategyService.AiGenerateResult result = aiStrategyService.generate(buyDesc, sellDesc, delta -> {
+                    try {
+                        emitter.send(SseEmitter.event().name("thinking").data(delta));
+                    } catch (IOException ignored) {
+                    }
+                });
+
+                emitter.send(SseEmitter.event().name("result").data(Map.of(
+                        "suggestedName", result.suggestedName != null ? result.suggestedName : "",
+                        "code", result.code != null ? result.code : "",
+                        "valid", result.valid,
+                        "compileError", result.compileError != null ? result.compileError : ""
+                )));
+                emitter.complete();
+            } catch (Exception e) {
+                try {
+                    emitter.send(SseEmitter.event().name("error").data("AI生成失败: " + e.getMessage()));
+                } catch (IOException ignored) {
+                }
+                emitter.completeWithError(e);
+            } finally {
+                executor.shutdown();
+            }
+        });
+
+        return emitter;
     }
 
     private User getCurrentUser(HttpSession session) {

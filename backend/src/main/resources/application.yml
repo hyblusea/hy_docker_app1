@@ -39,9 +39,9 @@ tushare:
 
 ai:
   siliconflow:
-    api-key: sk-ahvvgmdkxufawlgstmtsaafdsgvybxgryazbtltekfkdwftv
-    base-url: https://api.siliconflow.cn/v1
-    model: Qwen/Qwen3-8B
+    api-key: b8a3e137da074c25a8a5dd54cdbe6e5d.FfJ77oKfq5oVBpgj
+    base-url: https://open.bigmodel.cn/api/paas/v4
+    model: GLM-4.7-FlashX
 
 management:
   endpoints:

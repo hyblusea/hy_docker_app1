@@ -52,23 +52,25 @@
 }
 
 .aiBtn {
-  width: 28px;
   height: 28px;
+  padding: 0 10px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
-  background: none;
-  color: #1677ff;
+  border: none;
+  background: #1677ff;
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .aiBtn:hover {
-  background: #e6f4ff;
-  border-color: #1677ff;
+  background: #4096ff;
 }
 
 .addBtn:hover {

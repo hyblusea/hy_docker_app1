@@ -25,16 +25,16 @@ export interface SearchPanelHandle {
 
 interface SearchPanelProps {
   onSearch: (query: SearchQuery) => void
+  loading?: boolean
 }
 
-const SearchPanel = forwardRef<SearchPanelHandle, SearchPanelProps>(({ onSearch }, ref) => {
+const SearchPanel = forwardRef<SearchPanelHandle, SearchPanelProps>(({ onSearch, loading }, ref) => {
   const [selectedStock, setSelectedStock] = useState<StockBasic | null>(null)
   const [inputValue, setInputValue] = useState('')
   const [options, setOptions] = useState<{ value: string; label: string }[]>([])
   const [period, setPeriod] = useState('day')
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().subtract(2, 'year'))
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs())
-  const [loading] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const stockMapRef = useRef<Map<string, StockBasic>>(new Map())
 

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect, useState } from 'react'
 import { App } from 'antd'
 import SearchPanel from '../components/SearchPanel/SearchPanel'
 import type { SearchPanelHandle } from '../components/SearchPanel/SearchPanel'
@@ -52,6 +52,7 @@ interface HomePageProps {
 const HomePage = ({ state, onStateChange }: HomePageProps) => {
   const { message } = App.useApp()
   const searchPanelRef = useRef<SearchPanelHandle>(null)
+  const [queryLoading, setQueryLoading] = useState(false)
 
   useEffect(() => {
     saveTags(state.history)
@@ -62,6 +63,7 @@ const HomePage = ({ state, onStateChange }: HomePageProps) => {
       message.info('目前仅支持日K查询，其他周期后续开放')
       return
     }
+    setQueryLoading(true)
     try {
       const data = await queryDaily({
         tsCode: query.tsCode,
@@ -81,6 +83,8 @@ const HomePage = ({ state, onStateChange }: HomePageProps) => {
       })
     } catch (err) {
       message.error('查询失败: ' + (err as Error).message)
+    } finally {
+      setQueryLoading(false)
     }
   }, [message, onStateChange, state.backtestKey, state.history])
 
@@ -102,7 +106,7 @@ const HomePage = ({ state, onStateChange }: HomePageProps) => {
 
   return (
     <>
-      <SearchPanel ref={searchPanelRef} onSearch={handleSearch} />
+      <SearchPanel ref={searchPanelRef} onSearch={handleSearch} loading={queryLoading} />
       <HistoryTags queries={state.history} onSelect={handleHistorySelect} onRemove={handleHistoryRemove} />
       <BacktestPanel
         resetKey={state.backtestKey}

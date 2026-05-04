@@ -3,5 +3,6 @@ set -e
 
 mkdir -p /app/data
 
-nginx
+nginx -g 'daemon on;'
+
 exec java -jar /app/app.jar

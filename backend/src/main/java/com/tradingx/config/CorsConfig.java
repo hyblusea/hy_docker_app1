@@ -13,6 +13,8 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOriginPattern("http://localhost:*");
+        config.addAllowedOriginPattern("https://*.clawcloudrun.com");
+        config.addAllowedOriginPattern("https://localhost:*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);

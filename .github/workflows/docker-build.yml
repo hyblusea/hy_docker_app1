@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "master" ]   # 你的默认分支名，可能是 master, main
+    branches: [ "main" ]   # 你的默认分支名，可能是 master, main
 
 jobs:
   build:

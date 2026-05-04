@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { getMe, login as apiLogin, logout as apiLogout, type AuthUser } from '../api/auth'
 import { UnauthorizedError, setOnUnauthorized } from '../api/client'
+import { clearStrategiesCache, clearValidStrategiesCache } from '../hooks/useStrategies'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -33,6 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     setOnUnauthorized(() => {
+      clearStrategiesCache()
+      clearValidStrategiesCache()
       setUser(null)
     })
   }, [])

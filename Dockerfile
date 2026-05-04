@@ -17,7 +17,7 @@ FROM eclipse-temurin:21-jre-alpine
 RUN apk add --no-cache nginx gettext
 
 COPY --from=frontend-build /app/dist /usr/share/nginx/html
-COPY web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY web/nginx.conf /etc/nginx/nginx.conf
 COPY --from=backend-build /app/target/backend-0.0.1-SNAPSHOT.jar /app/app.jar
 COPY --from=backend-build /app/data/tushare_stock_basic.csv /app/static-data/tushare_stock_basic.csv
 

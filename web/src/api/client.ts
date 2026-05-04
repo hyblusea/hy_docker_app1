@@ -1,3 +1,5 @@
+import { UnauthorizedError } from './client'
+
 export interface ApiResponse<T> {
   code: number
   msg: string
@@ -6,6 +8,12 @@ export interface ApiResponse<T> {
 
 const BASE_URL = '/api'
 
+let onUnauthorized: (() => void) | null = null
+
+export function setOnUnauthorized(cb: () => void) {
+  onUnauthorized = cb
+}
+
 export async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
@@ -13,6 +21,7 @@ export async function fetchJson<T>(url: string, options?: RequestInit): Promise<
     ...options,
   })
   if (res.status === 401) {
+    onUnauthorized?.()
     throw new UnauthorizedError('未登录或会话已过期')
   }
   if (res.status === 403) {
@@ -24,13 +33,6 @@ export async function fetchJson<T>(url: string, options?: RequestInit): Promise<
     throw new Error(body.msg || `HTTP ${res.status}`)
   }
   return res.json()
-}
-
-export class UnauthorizedError extends Error {
-  constructor(msg: string) {
-    super(msg)
-    this.name = 'UnauthorizedError'
-  }
 }
 
 export class ForbiddenError extends Error {

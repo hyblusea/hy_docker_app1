@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { getMe, login as apiLogin, logout as apiLogout, type AuthUser } from '../api/auth'
-import { UnauthorizedError } from '../api/client'
+import { UnauthorizedError, setOnUnauthorized } from '../api/client'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -29,6 +29,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       if (!signal?.aborted) setLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
+    setOnUnauthorized(() => {
+      setUser(null)
+    })
   }, [])
 
   useEffect(() => {

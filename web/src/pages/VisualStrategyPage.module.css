@@ -31,6 +31,11 @@
   color: var(--text-primary);
 }
 
+.sidebarActions {
+  display: flex;
+  gap: 4px;
+}
+
 .addBtn {
   width: 28px;
   height: 28px;
@@ -44,6 +49,26 @@
   justify-content: center;
   font-size: 14px;
   transition: all var(--transition-fast);
+}
+
+.aiBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: none;
+  color: #1677ff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+}
+
+.aiBtn:hover {
+  background: #e6f4ff;
+  border-color: #1677ff;
 }
 
 .addBtn:hover {

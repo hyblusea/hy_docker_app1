@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Input, InputNumber, Select, Radio, App, Modal, Empty, Tooltip } from 'antd'
-import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, RobotOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import Editor from '@monaco-editor/react'
-import { getStrategy, createStrategy, updateStrategy, deleteStrategy } from '../api/strategy'
+import { getStrategy, createStrategy, updateStrategy, deleteStrategy, aiGenerateStrategy } from '../api/strategy'
 import { useStrategies } from '../hooks/useStrategies'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -121,6 +121,13 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const strategyList = useMemo(() => allStrategies.filter(s => s.language === 'visual'), [allStrategies])
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [newName, setNewName] = useState('')
+  const [aiModalOpen, setAiModalOpen] = useState(false)
+  const [aiBuyDesc, setAiBuyDesc] = useState('')
+  const [aiSellDesc, setAiSellDesc] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiResult, setAiResult] = useState<{ suggestedName: string; code: string; valid: boolean; compileError: string } | null>(null)
+  const [aiStrategyName, setAiStrategyName] = useState('')
+  const [aiCode, setAiCode] = useState('')
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null)
   const [paletteFilter, setPaletteFilter] = useState('')
 
@@ -375,6 +382,60 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       message.error('创建失败')
     }
   }, [newName, message, invalidateStrategies, handleLoad])
+
+  const handleAiGenerate = useCallback(async () => {
+    if (!aiBuyDesc.trim() || !aiSellDesc.trim()) {
+      message.warning('请输入买入和卖出策略描述')
+      return
+    }
+    setAiGenerating(true)
+    setAiResult(null)
+    try {
+      const result = await aiGenerateStrategy(aiBuyDesc.trim(), aiSellDesc.trim())
+      setAiResult(result)
+      setAiStrategyName(result.suggestedName || '')
+      setAiCode(result.code || '')
+      if (result.valid) {
+        message.success('AI生成成功，代码编译通过')
+      } else {
+        message.warning('AI生成完成，但代码编译未通过，请检查或手动修改')
+      }
+    } catch {
+      message.error('AI生成失败，请稍后重试')
+    } finally {
+      setAiGenerating(false)
+    }
+  }, [aiBuyDesc, aiSellDesc, message])
+
+  const handleAiImport = useCallback(async () => {
+    if (!aiStrategyName.trim()) {
+      message.warning('请输入策略名称')
+      return
+    }
+    if (!aiCode.trim()) {
+      message.warning('没有可导入的代码')
+      return
+    }
+    try {
+      const s = await createStrategy({
+        name: aiStrategyName.trim(),
+        language: 'java',
+        code: aiCode.trim(),
+      })
+      message.success('策略导入成功')
+      setAiModalOpen(false)
+      setAiBuyDesc('')
+      setAiSellDesc('')
+      setAiResult(null)
+      setAiStrategyName('')
+      setAiCode('')
+      onStrategyChanged?.()
+      invalidateStrategies()
+      handleLoad(s.id!)
+    } catch {
+      message.error('策略导入失败')
+    }
+  }, [aiStrategyName, aiCode, message, invalidateStrategies, handleLoad])
 
   const handleRename = useCallback(async (id: number) => {
     const s = strategyList.find((s) => s.id === id)
@@ -780,9 +841,18 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       <div className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <span className={styles.sidebarTitle}>策略列表</span>
-          <button className={styles.addBtn} onClick={() => setCreateModalOpen(true)}>
-            <PlusOutlined />
-          </button>
+          <div className={styles.sidebarActions}>
+            <Tooltip title="AI智能创建">
+              <button className={styles.aiBtn} onClick={() => setAiModalOpen(true)}>
+                <RobotOutlined />
+              </button>
+            </Tooltip>
+            <Tooltip title="新建策略">
+              <button className={styles.addBtn} onClick={() => setCreateModalOpen(true)}>
+                <PlusOutlined />
+              </button>
+            </Tooltip>
+          </div>
         </div>
         <div className={styles.strategyList}>
           {strategyList.map((s) => (
@@ -1024,6 +1094,99 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             onChange={(e) => setNewName(e.target.value)}
           />
         </div>
+      </Modal>
+
+      <Modal
+        title={<span><RobotOutlined style={{ marginRight: 8, color: '#1677ff' }} />AI智能创建策略</span>}
+        open={aiModalOpen}
+        onCancel={() => {
+          setAiModalOpen(false)
+          setAiBuyDesc('')
+          setAiSellDesc('')
+          setAiResult(null)
+          setAiStrategyName('')
+          setAiCode('')
+        }}
+        width={800}
+        footer={aiResult ? [
+          <Button key="back" onClick={() => { setAiResult(null); setAiCode('') }}>重新生成</Button>,
+          <Button key="import" type="primary" icon={<ThunderboltOutlined />} onClick={handleAiImport} disabled={!aiStrategyName.trim() || !aiCode.trim()}>
+            导入策略
+          </Button>,
+        ] : [
+          <Button key="cancel" onClick={() => setAiModalOpen(false)}>取消</Button>,
+          <Button key="generate" type="primary" icon={<ThunderboltOutlined />} onClick={handleAiGenerate} loading={aiGenerating} disabled={!aiBuyDesc.trim() || !aiSellDesc.trim()}>
+            AI生成
+          </Button>,
+        ]}
+      >
+        {!aiResult ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
+            <div>
+              <div style={{ marginBottom: 6, fontWeight: 500, color: '#52c41a' }}>买入策略描述</div>
+              <Input.TextArea
+                rows={3}
+                placeholder="例如：RSI低于30时买入，且收盘价在20日均线上方"
+                value={aiBuyDesc}
+                onChange={(e) => setAiBuyDesc(e.target.value)}
+              />
+            </div>
+            <div>
+              <div style={{ marginBottom: 6, fontWeight: 500, color: '#ff4d4f' }}>卖出策略描述</div>
+              <Input.TextArea
+                rows={3}
+                placeholder="例如：RSI高于70时卖出，或止损5%"
+                value={aiSellDesc}
+                onChange={(e) => setAiSellDesc(e.target.value)}
+              />
+            </div>
+            <div style={{ color: '#999', fontSize: 12 }}>
+              提示：请尽量具体描述指标和参数，AI将基于ta4j库生成Java策略代码
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+            <div>
+              <div style={{ marginBottom: 6, fontWeight: 500 }}>策略名称</div>
+              <Input
+                value={aiStrategyName}
+                onChange={(e) => setAiStrategyName(e.target.value)}
+                placeholder="输入策略名称"
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontWeight: 500 }}>编译状态:</span>
+              {aiResult.valid ? (
+                <span style={{ color: '#52c41a' }}><CheckCircleOutlined /> 编译通过</span>
+              ) : (
+                <span style={{ color: '#ff4d4f' }}><CloseCircleOutlined /> 编译未通过</span>
+              )}
+            </div>
+            {aiResult.compileError && (
+              <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6, padding: 8, fontSize: 12, color: '#cf1322', maxHeight: 80, overflow: 'auto' }}>
+                {aiResult.compileError}
+              </div>
+            )}
+            <div>
+              <div style={{ marginBottom: 6, fontWeight: 500 }}>生成的Java代码（可编辑）</div>
+              <Editor
+                height="320px"
+                language="java"
+                theme="vs-dark"
+                value={aiCode}
+                onChange={(v) => setAiCode(v || '')}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                  wordWrap: 'on',
+                  folding: true,
+                }}
+              />
+            </div>
+          </div>
+        )}
       </Modal>
 
       <Modal

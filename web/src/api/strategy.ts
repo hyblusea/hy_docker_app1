@@ -24,3 +24,14 @@ export async function updateStrategy(id: number, strategy: Partial<Strategy>): P
 export async function deleteStrategy(id: number): Promise<void> {
   await apiDelete(`/strategy/${id}`)
 }
+
+export interface AiGenerateResult {
+  suggestedName: string
+  code: string
+  valid: boolean
+  compileError: string
+}
+
+export async function aiGenerateStrategy(buyDesc: string, sellDesc: string): Promise<AiGenerateResult> {
+  return apiPost<AiGenerateResult>('/strategy/ai-generate', { buyDesc, sellDesc })
+}

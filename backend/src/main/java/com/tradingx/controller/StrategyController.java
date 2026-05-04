@@ -3,12 +3,14 @@ package com.tradingx.controller;
 import com.tradingx.model.R;
 import com.tradingx.model.Strategy;
 import com.tradingx.model.User;
+import com.tradingx.service.AiStrategyService;
 import com.tradingx.service.StrategyService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class StrategyController {
 
     private final StrategyService strategyService;
+    private final AiStrategyService aiStrategyService;
 
     @GetMapping("/list")
     public R<List<Strategy>> list(HttpSession session) {
@@ -54,6 +57,22 @@ public class StrategyController {
     public R<Void> delete(@PathVariable Long id) {
         strategyService.delete(id);
         return R.ok(null);
+    }
+
+    @PostMapping("/ai-generate")
+    public R<Map<String, Object>> aiGenerate(@RequestBody Map<String, String> request) {
+        String buyDesc = request.get("buyDesc");
+        String sellDesc = request.get("sellDesc");
+        if (buyDesc == null || buyDesc.isBlank() || sellDesc == null || sellDesc.isBlank()) {
+            return R.fail("请输入买入和卖出策略描述");
+        }
+        AiStrategyService.AiGenerateResult result = aiStrategyService.generate(buyDesc, sellDesc);
+        return R.ok(Map.of(
+                "suggestedName", result.suggestedName != null ? result.suggestedName : "",
+                "code", result.code != null ? result.code : "",
+                "valid", result.valid,
+                "compileError", result.compileError != null ? result.compileError : ""
+        ));
     }
 
     private User getCurrentUser(HttpSession session) {

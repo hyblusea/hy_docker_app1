@@ -35,7 +35,7 @@ spring:
 tushare:
   api-url: https://api.tushare.pro
   token: e0dbbd8c6800d855f7d12c48b0a13a1131d46438b4e80b01b59dd5b5
-  stock-basic-csv: ./data/tushare_stock_basic.csv
+  stock-basic-csv: /app/static-data/tushare_stock_basic.csv
 
 management:
   endpoints:

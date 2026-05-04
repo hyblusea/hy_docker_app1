@@ -10,6 +10,7 @@ services:
       - backend-data:/app/data
     environment:
       - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/tradingx;AUTO_SERVER=TRUE
+      - TUSHARE_STOCK_BASIC_CSV=/app/static-data/tushare_stock_basic.csv
 
   frontend:
     build:

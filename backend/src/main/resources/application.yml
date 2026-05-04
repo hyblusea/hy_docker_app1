@@ -41,7 +41,7 @@ ai:
   siliconflow:
     api-key: sk-ahvvgmdkxufawlgstmtsaafdsgvybxgryazbtltekfkdwftv
     base-url: https://api.siliconflow.cn/v1
-    model: Qwen/Qwen3-Coder-30B-A3B-Instruct
+    model: Qwen/Qwen3-8B
 
 management:
   endpoints:

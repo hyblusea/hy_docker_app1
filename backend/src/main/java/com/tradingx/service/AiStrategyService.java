@@ -30,7 +30,7 @@ public class AiStrategyService {
     @Value("${ai.siliconflow.base-url:https://api.siliconflow.cn/v1}")
     private String baseUrl;
 
-    @Value("${ai.siliconflow.model:Qwen/Qwen3-Coder-30B-A3B-Instruct}")
+    @Value("${ai.siliconflow.model:Qwen/Qwen3-8B}")
     private String model;
 
     private static final int MAX_RETRIES = 2;

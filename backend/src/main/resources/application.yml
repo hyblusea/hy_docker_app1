@@ -34,10 +34,9 @@ spring:
 
   ai:
     openai:
-      api-key: ${GITHUB_TOKEN:}
       base-url: https://models.github.ai/inference
       chat:
-        model: deepseek/DeepSeek-V3-0324
+        model: meta/Llama-4-Scout-17B-16E-Instruct
         options:
           temperature: 0
           max-tokens: 4096
@@ -52,3 +51,8 @@ management:
     web:
       exposure:
         include: health,info
+
+logging:
+  level:
+    com.openai: DEBUG
+    okhttp3: DEBUG

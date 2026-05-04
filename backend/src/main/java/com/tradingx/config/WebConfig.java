@@ -20,6 +20,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/auth/register",
                         "/api/health",
                         "/h2-console/**",
+                        "/h2-console",
                         "/webjars/**"
                 );
     }

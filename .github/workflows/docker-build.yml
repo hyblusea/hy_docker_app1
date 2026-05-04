@@ -4,10 +4,6 @@ on:
   push:
     branches: ["main"]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository }}
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -25,15 +21,11 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push images
         run: |
-          IMAGE_PREFIX_LOWER=$(echo "${{ env.IMAGE_PREFIX }}" | tr '[:upper:]' '[:lower:]')
           docker compose build
-          docker tag hy_docker_app1-backend:latest $REGISTRY/$IMAGE_PREFIX_LOWER/backend:latest
-          docker tag hy_docker_app1-frontend:latest $REGISTRY/$IMAGE_PREFIX_LOWER/frontend:latest
-          docker push $REGISTRY/$IMAGE_PREFIX_LOWER/backend:latest
-          docker push $REGISTRY/$IMAGE_PREFIX_LOWER/frontend:latest
+          docker compose push

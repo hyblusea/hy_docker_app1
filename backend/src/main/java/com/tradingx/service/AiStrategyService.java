@@ -2,23 +2,27 @@ package com.tradingx.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AiStrategyService {
 
     private final StrategyCompiler strategyCompiler;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public AiStrategyService(StrategyCompiler strategyCompiler) {
+        this.strategyCompiler = strategyCompiler;
+    }
 
     @Value("${ai.siliconflow.api-key:}")
     private String apiKey;
@@ -26,71 +30,38 @@ public class AiStrategyService {
     @Value("${ai.siliconflow.base-url:https://api.siliconflow.cn/v1}")
     private String baseUrl;
 
-    @Value("${ai.siliconflow.model:Qwen/Qwen2.5-7B-Instruct}")
+    @Value("${ai.siliconflow.model:Qwen/Qwen3-Coder-30B-A3B-Instruct}")
     private String model;
 
     private static final int MAX_RETRIES = 2;
 
     private static final String SYSTEM_PROMPT = """
-            你是一个量化交易策略代码生成助手。用户会描述买入和卖出策略，你需要生成符合以下规范的Java代码。
-
-            ## 严格规范
-
-            1. 代码必须包含一个 public 类，类名使用 PascalCase 命名（如 RsiStrategy）
-            2. 类必须包含方法: public Strategy buildStrategy(BarSeries series)
-            3. 返回类型是 org.ta4j.core.Strategy
-            4. 只允许使用以下 import:
-               - org.ta4j.core.*
-               - org.ta4j.core.indicators.*
-               - org.ta4j.core.indicators.helpers.*
-               - org.ta4j.core.indicators.statistics.*
-               - org.ta4j.core.indicators.volume.*
-               - org.ta4j.core.indicators.ichimoku.*
-               - org.ta4j.core.indicators.bollinger.*
-               - org.ta4j.core.indicators.keltner.*
-               - org.ta4j.core.rules.*
-               - com.tradingx.rules.MaxTradeBarCountRule
-            5. 不要使用任何不在上述列表中的类或方法
-            6. 如果用户描述的策略需要本系统不支持的指标或规则，请在策略名称后标注"[部分不支持]"，并用最接近的已有指标替代
-
-            ## 可用指标（部分常用）
-            - ClosePriceIndicator(series)
-            - SMAIndicator(indicator, barCount)
-            - EMAIndicator(indicator, barCount)
-            - RSIIndicator(indicator, barCount)
-            - MACDIndicator(indicator, shortBarCount, longBarCount)
-            - BollingerBandsUpperIndicator(BollingerBandsMiddleIndicator)
-            - BollingerBandsLowerIndicator(BollingerBandsMiddleIndicator)
-            - BollingerBandsMiddleIndicator(SMAIndicator, StandardDeviationIndicator)
-            - ATRIndicator(series, barCount)
-            - CCIIndicator(series, barCount)
-            - VolumeIndicator(series)
-            - IchimokuTenkanSenIndicator(series), IchimokuKijunSenIndicator(series)
-            - OBVIndicator(series), CMFIndicator(series, barCount)
-            - StandardDeviationIndicator(indicator, barCount)
-
-            ## 可用规则
-            - CrossedUpRule(indicator1, indicator2)
-            - CrossedDownRule(indicator1, indicator2)
-            - OverIndicatorRule(indicator1, indicator2)
-            - UnderIndicatorRule(indicator1, indicator2)
-            - IsRisingRule(indicator, barCount)
-            - IsFallingRule(indicator, barCount)
-            - StopLossRule(series, lossPercentage)
-            - StopGainRule(series, gainPercentage)
-            - TrailingStopLossRule(series, lossPercentage)
-            - MaxTradeBarCountRule(maxBarCount)
-            - BooleanIndicatorRule(indicator)
-            - InPipeRule(indicator, lower, upper)
-
-            ## 输出格式（严格遵守）
-            第一行输出策略名称建议（不含代码），然后空一行，接着输出完整的Java代码。
-            格式如下：
-            策略名称:XXX策略
+            你是量化交易策略代码生成助手。根据用户描述生成Java代码。
+            规范:1)public类PascalCase命名 2)包含public Strategy buildStrategy(BarSeries series)方法 3)必须import以下包:org.ta4j.core.*;org.ta4j.core.indicators.*;org.ta4j.core.indicators.helpers.*;org.ta4j.core.rules.*;
+            常用指标:ClosePriceIndicator(series),SMAIndicator(ind,n),EMAIndicator(ind,n),RSIIndicator(ind,n),MACDIndicator(ind,s,l),BollingerBandsUpper/Middle/LowerIndicator,ATRIndicator(series,n),CCIIndicator(series,n),VolumeIndicator(series),StandardDeviationIndicator(ind,n),ConstantIndicator(series,value)
+            常用规则:CrossedUpRule(ind1,ind2),CrossedDownRule(ind1,ind2),OverIndicatorRule(ind1,ind2),UnderIndicatorRule(ind1,ind2),IsRisingRule(ind,n),IsFallingRule(ind,n),StopLossRule(series,pct),StopGainRule(series,pct),TrailingStopLossRule(series,pct),MaxTradeBarCountRule(n),BooleanIndicatorRule(ind),InPipeRule(ind,lo,hi)
+            注意:OverIndicatorRule和UnderIndicatorRule的第二个参数可以直接用数字,如UnderIndicatorRule(rsi,30)。ClosePriceIndicator在helpers包中,必须import org.ta4j.core.indicators.helpers.*
+            不支持的指标用最接近的替代,名称加[部分不支持]
+            输出格式:第一行"策略名称:XXX",空一行,然后用```java代码块输出完整代码
+            示例:
+            策略名称:均线交叉策略
 
             ```java
             import org.ta4j.core.*;
-            // ... 完整代码
+            import org.ta4j.core.indicators.*;
+            import org.ta4j.core.indicators.helpers.*;
+            import org.ta4j.core.rules.*;
+
+            public class SmaCrossStrategy {
+                public Strategy buildStrategy(BarSeries series) {
+                    ClosePriceIndicator close = new ClosePriceIndicator(series);
+                    SMAIndicator sma5 = new SMAIndicator(close, 5);
+                    SMAIndicator sma20 = new SMAIndicator(close, 20);
+                    Rule buyRule = new CrossedUpRule(sma5, sma20);
+                    Rule sellRule = new CrossedDownRule(sma5, sma20);
+                    return new BaseStrategy(buyRule, sellRule);
+                }
+            }
             ```
             """;
 
@@ -144,34 +115,29 @@ public class AiStrategyService {
     private String callAiApi(String userPrompt, AiGenerateResult previousResult) throws Exception {
         RestTemplate restTemplate = new RestTemplate();
 
-        StringBuilder messages = new StringBuilder();
-        messages.append("{\"role\":\"system\",\"content\":")
-                .append(objectMapper.writeValueAsString(SYSTEM_PROMPT))
-                .append("}");
-
-        messages.append(",{\"role\":\"user\",\"content\":")
-                .append(objectMapper.writeValueAsString(userPrompt))
-                .append("}");
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content", SYSTEM_PROMPT));
+        messages.add(Map.of("role", "user", "content", userPrompt));
 
         if (previousResult != null && previousResult.code != null && previousResult.compileError != null) {
             String assistantContent = "策略名称:" + (previousResult.suggestedName != null ? previousResult.suggestedName : "未命名") + "\n\n```java\n" + previousResult.code + "\n```";
-            messages.append(",{\"role\":\"assistant\",\"content\":")
-                    .append(objectMapper.writeValueAsString(assistantContent))
-                    .append("}");
+            messages.add(Map.of("role", "assistant", "content", assistantContent));
 
             String retryContent = "上一次生成的代码编译失败，错误信息:\n" + previousResult.compileError + "\n\n请修复代码并重新生成。确保只使用系统支持的指标和规则。";
-            messages.append(",{\"role\":\"user\",\"content\":")
-                    .append(objectMapper.writeValueAsString(retryContent))
-                    .append("}");
+            messages.add(Map.of("role", "user", "content", retryContent));
         }
 
-        String requestBody = "{\"model\":\"" + model + "\",\"messages\":[" + messages + "],\"max_tokens\":4096,\"temperature\":0.7}";
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", messages);
+        requestBody.put("max_tokens", 4096);
+        requestBody.put("temperature", 0.3);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+        HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(requestBody), headers);
         ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl + "/chat/completions",
                 HttpMethod.POST,

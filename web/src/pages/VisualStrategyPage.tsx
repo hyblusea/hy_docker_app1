@@ -435,22 +435,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     return generateJavaCode(config, className)
   }, [config, strategyName])
 
-  const handleEditorMount = useCallback((editor: any) => {
-    const lineCount = editor.getModel().getLineCount()
-    for (let i = 1; i <= Math.min(lineCount, 30); i++) {
-      const lineContent = editor.getModel().getLineContent(i)
-      if (/^import\s/.test(lineContent)) {
-        const foldingRegion = editor.getContribution('editor.contrib.folding')
-        if (foldingRegion) {
-          const ranges = foldingRegion.getFoldingRanges()
-          const importRange = ranges.find((r: any) => r.startLineNumber === i || r.startLineNumber === i - 1)
-          if (importRange) {
-            editor.trigger('foldImports', 'editor.fold', { selectionLines: [importRange.startLineNumber] })
-          }
-          break
-        }
-      }
-    }
+  const handleEditorMount = useCallback((_editor: any) => {
   }, [])
 
   const handleEditorBeforeMount = useCallback((monaco: any) => {

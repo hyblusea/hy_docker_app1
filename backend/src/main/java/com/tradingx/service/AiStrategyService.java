@@ -29,19 +29,13 @@ public class AiStrategyService {
 
     private static final String SYSTEM_PROMPT = """
             你是量化交易策略代码生成助手。根据用户描述生成java ta4j 0.22.6 库的策略类，包名 com.tradingx.strategy,
-            输出格式:第一行"策略名称:XXX",空一行,然后用```java代码块输出完整java类代码
+            输出格式:第一行"策略名称:XXX",空一行,然后用```java代码块输出完整java类代码```
             只输出以上要求的内容
             """;
 
-    private static final List<String> REQUIRED_IMPORTS = List.of(
-            "import org.ta4j.core.*;",
-            "import org.ta4j.core.indicators.*;",
-            "import org.ta4j.core.indicators.averages.*;",
-            "import org.ta4j.core.indicators.helpers.*;",
-            "import org.ta4j.core.rules.*;"
-    );
-
     private static final Pattern CLASS_NAME_PATTERN = Pattern.compile("public\\s+class\\s+(\\w+)");
+
+    private static final String PACKAGE_NAME = "com.tradingx.strategy";
 
     public AiStrategyService(StrategyCompiler strategyCompiler, ChatClient.Builder chatClientBuilder, OpenAiChatModel chatModel) {
         this.strategyCompiler = strategyCompiler;
@@ -200,33 +194,17 @@ public class AiStrategyService {
             code = aiResponse;
         }
 
-        code = ensureImports(code);
+        code = ensureCode(code);
 
         result.suggestedName = nameLine;
         result.code = code;
         return result;
     }
 
-    private static final String PACKAGE_NAME = "com.tradingx.strategy";
-
-    private String ensureImports(String code) {
+    private String ensureCode(String code) {
         if (!code.contains("package " + PACKAGE_NAME)) {
             code = "package " + PACKAGE_NAME + ";\n\n" + code;
         }
-
-        for (String imp : REQUIRED_IMPORTS) {
-            if (!code.contains(imp)) {
-                int classIdx = code.indexOf("public class");
-                if (classIdx > 0) {
-                    code = code.substring(0, classIdx) + imp + "\n" + code.substring(classIdx);
-                } else {
-                    code = imp + "\n" + code;
-                }
-            }
-        }
-
-        code = code.replace("new CrossedUpRule(", "new CrossedUpIndicatorRule(");
-        code = code.replace("new CrossedDownRule(", "new CrossedDownIndicatorRule(");
 
         code = code.replaceAll("(?m)^(\\s*)class\\s+(\\w+)", "$1public class $2");
 

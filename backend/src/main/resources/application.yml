@@ -35,11 +35,11 @@ spring:
   ai:
     openai:
       api-key: ${GITHUB_TOKEN:}
-      base-url: https://models.inference.ai.azure.com
+      base-url: https://models.github.ai/inference
       chat:
-        model: deepseek/DeepSeek-V3
+        model: deepseek/DeepSeek-V3-0324
         options:
-          temperature: 0.3
+          temperature: 0
           max-tokens: 4096
 
 tushare:

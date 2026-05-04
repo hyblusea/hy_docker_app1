@@ -756,7 +756,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           }}
         >
           {group.children.length === 0 ? (
-            <Empty description="拖拽或点击添加规则" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <Empty description="拖拽左侧规则组件到此处" image={Empty.PRESENTED_IMAGE_SIMPLE} />
           ) : (
             group.children.map((child, idx) => renderRuleNode(child, section, [...path, idx]))
           )}
@@ -812,9 +812,14 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 </span>
               </Tooltip>
               <span className={styles.strategyName}>{s.name}</span>
-              {isRoot && s.created_by && (
-                <span className={styles.strategyCreator}>{s.created_by}</span>
-              )}
+              <div className={styles.strategyMeta}>
+                {isRoot && s.created_by && (
+                  <span className={styles.strategyCreator}>{s.created_by}</span>
+                )}
+                {s.created_at && (
+                  <span className={styles.strategyDate}>{new Date(s.created_at).toLocaleDateString()}</span>
+                )}
+              </div>
               <div className={styles.itemActions}>
                 <button
                   className={styles.actionBtn}
@@ -848,15 +853,20 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             {strategyName && <span className={styles.headerStrategyName}>{strategyName}</span>}
           </div>
           <div className={styles.headerRight}>
-            <Button size="small" icon={<EyeOutlined />} onClick={() => setCodeModalOpen(true)}>
+            <Button size="small" icon={<EyeOutlined />} onClick={() => setCodeModalOpen(true)} disabled={!strategyName.trim()}>
               查看代码
             </Button>
-            <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleSave} loading={saving}>
+            <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleSave} loading={saving} disabled={!strategyName.trim()}>
               保存
             </Button>
           </div>
         </div>
 
+        {!strategyName.trim() ? (
+          <div className={styles.builderDisabled}>
+            <Empty description="请先从左侧选择或新建一个策略" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          </div>
+        ) : (
         <div className={styles.body}>
           <div className={styles.palette}>
             <div className={styles.paletteSearch}>
@@ -945,7 +955,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
               </div>
               <div className={styles.sectionBody}>
                 {config.indicators.length === 0 ? (
-                  <Empty description="拖拽或点击左侧指标组件添加" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Empty description="拖拽左侧指标组件到此处" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                 ) : (
                   <div className={styles.indicatorGrid}>
                     {config.indicators.map(renderIndicatorCard)}
@@ -1011,6 +1021,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       <Modal

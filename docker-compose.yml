@@ -21,6 +21,8 @@ services:
       - "3000:80"
     depends_on:
       - backend
+    environment:
+      - BACKEND_URL=http://backend:8080
 
 volumes:
   backend-data:

@@ -2,6 +2,7 @@ services:
   backend:
     build:
       context: ./backend
+    image: ghcr.io/hyblusea/hy_docker_app1/backend:latest
     container_name: tradingx-backend
     restart: unless-stopped
     expose:
@@ -15,6 +16,7 @@ services:
   frontend:
     build:
       context: ./web
+    image: ghcr.io/hyblusea/hy_docker_app1/frontend:latest
     container_name: tradingx-frontend
     restart: unless-stopped
     ports:

@@ -13,8 +13,10 @@ COPY backend/src ./src
 COPY backend/data/tushare_stock_basic.csv ./data/tushare_stock_basic.csv
 RUN mvn package -DskipTests -B
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jdk-alpine
 RUN apk add --no-cache nginx gettext
+
+WORKDIR /app
 
 COPY --from=frontend-build /app/dist /usr/share/nginx/html
 COPY web/nginx.conf /etc/nginx/nginx.conf

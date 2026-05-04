@@ -41,6 +41,8 @@ public class AiStrategyService {
 
     private static final int MAX_RETRIES = 2;
 
+
+    // 提示词
     private static final String SYSTEM_PROMPT = """
             你是量化交易策略代码生成助手。根据用户描述生成Java代码。
             规范:1)public类PascalCase命名 2)包含public Strategy buildStrategy(BarSeries series)方法 3)只允许使用以下5个import语句,不要添加其他import:
@@ -308,6 +310,8 @@ public class AiStrategyService {
 
         result = result.replace("new CrossedUpRule(", "new CrossedUpIndicatorRule(");
         result = result.replace("new CrossedDownRule(", "new CrossedDownIndicatorRule(");
+
+        result = result.replaceAll("(?m)^(\\s*)class\\s+(\\w+)", "$1public class $2");
 
         return result;
     }

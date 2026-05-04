@@ -1,0 +1,44 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    session:
+      timeout: 24h
+
+spring:
+  application:
+    name: tradingx-backend
+
+  datasource:
+    url: jdbc:h2:file:./data/tradingx;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+tushare:
+  api-url: https://api.tushare.pro
+  token: e0dbbd8c6800d855f7d12c48b0a13a1131d46438b4e80b01b59dd5b5
+  stock-basic-csv: ./data/tushare_stock_basic.csv
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

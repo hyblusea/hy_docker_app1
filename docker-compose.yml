@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: tradingx-backend
+    restart: unless-stopped
+    expose:
+      - "8080"
+    volumes:
+      - backend-data:/app/data
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/tradingx;AUTO_SERVER=TRUE
+
+  frontend:
+    build:
+      context: ./web
+    container_name: tradingx-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  backend-data:

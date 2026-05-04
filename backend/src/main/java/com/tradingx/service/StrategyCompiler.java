@@ -7,14 +7,10 @@ import org.ta4j.core.Strategy;
 
 import javax.tools.*;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.lang.reflect.Method;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -146,32 +142,11 @@ public class StrategyCompiler {
     }
 
     private String buildClasspath() {
-        StringBuilder cp = new StringBuilder();
         String javaClassPath = System.getProperty("java.class.path");
         if (javaClassPath != null && !javaClassPath.isEmpty()) {
-            cp.append(javaClassPath);
+            return javaClassPath;
         }
-        ClassLoader cl = this.getClass().getClassLoader();
-        if (cl instanceof URLClassLoader) {
-            for (URL url : ((URLClassLoader) cl).getURLs()) {
-                if (cp.length() > 0) cp.append(File.pathSeparator);
-                cp.append(url.getPath());
-            }
-        } else {
-            try {
-                Method getURLsMethod = cl.getClass().getMethod("getURLs");
-                Object urls = getURLsMethod.invoke(cl);
-                if (urls instanceof URL[]) {
-                    for (URL url : (URL[]) urls) {
-                        if (cp.length() > 0) cp.append(File.pathSeparator);
-                        cp.append(url.getPath());
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("无法获取类加载器URL列表，使用java.class.path: {}", e.getMessage());
-            }
-        }
-        return cp.toString();
+        return "";
     }
 
     private static class JavaSourceFileObject extends SimpleJavaFileObject {

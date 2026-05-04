@@ -28,40 +28,9 @@ public class AiStrategyService {
     private static final int MAX_RETRIES = 2;
 
     private static final String SYSTEM_PROMPT = """
-            你是量化交易策略代码生成助手。根据用户描述生成Java代码。
-            规范:1)public类PascalCase命名 2)包含public Strategy buildStrategy(BarSeries series)方法 3)只允许使用以下5个import语句,不要添加其他import:
-            import org.ta4j.core.*;
-            import org.ta4j.core.indicators.*;
-            import org.ta4j.core.indicators.averages.*;
-            import org.ta4j.core.indicators.helpers.*;
-            import org.ta4j.core.rules.*;
-            注意:这5个import已覆盖所有需要的类,不需要再import任何其他包
-            常用指标:ClosePriceIndicator(series),SMAIndicator(ind,n),EMAIndicator(ind,n),RSIIndicator(ind,n),MACDIndicator(close,shortN,longN)信号线=EMAIndicator(macd,signalN),ATRIndicator(series,n),CCIIndicator(series,n),VolumeIndicator(series),StandardDeviationIndicator(ind,n),ConstantIndicator(series,value),BollingerBandsUpper/Middle/LowerIndicator
-            常用规则:CrossedUpIndicatorRule(ind1,ind2),CrossedDownIndicatorRule(ind1,ind2),OverIndicatorRule(ind1,ind2),UnderIndicatorRule(ind1,ind2),IsRisingRule(ind,n),IsFallingRule(ind,n),StopLossRule(series,pct),StopGainRule(series,pct),TrailingStopLossRule(series,pct),MaxTradeBarCountRule(n),BooleanIndicatorRule(ind),InPipeRule(ind,lo,hi)
-            注意:1)规则名是CrossedUpIndicatorRule不是CrossedUpRule 2)OverIndicatorRule和UnderIndicatorRule的第二个参数可以直接用数字 3)MACDIndicator(close,12,26)返回MACD线,信号线=EMAIndicator(macd,9) 4)不要使用getMacdLine()或getSignalLine()方法
-            不支持的指标用最接近的替代,名称加[部分不支持]
+            你是量化交易策略代码生成助手。根据用户描述生成java ta4j 0.22.6 库的策略类，包名 com.tradingx.strategy,
             输出格式:第一行"策略名称:XXX",空一行,然后用```java代码块输出完整java类代码
-            示例:
-            策略名称:MACD交叉策略
-
-            ```java
-            import org.ta4j.core.*;
-            import org.ta4j.core.indicators.*;
-            import org.ta4j.core.indicators.averages.*;
-            import org.ta4j.core.indicators.helpers.*;
-            import org.ta4j.core.rules.*;
-
-            public class MacdCrossStrategy {
-                public Strategy buildStrategy(BarSeries series) {
-                    ClosePriceIndicator close = new ClosePriceIndicator(series);
-                    MACDIndicator macd = new MACDIndicator(close, 12, 26);
-                    EMAIndicator signal = new EMAIndicator(macd, 9);
-                    Rule buyRule = new CrossedUpIndicatorRule(macd, signal);
-                    Rule sellRule = new CrossedDownIndicatorRule(macd, signal);
-                    return new BaseStrategy(buyRule, sellRule);
-                }
-            }
-            ```
+            只输出以上要求的内容
             """;
 
     private static final List<String> REQUIRED_IMPORTS = List.of(
@@ -238,42 +207,30 @@ public class AiStrategyService {
         return result;
     }
 
+    private static final String PACKAGE_NAME = "com.tradingx.strategy";
+
     private String ensureImports(String code) {
-        String[] lines = code.split("\n");
-        List<String> codeLines = new ArrayList<>();
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (trimmed.startsWith("import ")) {
-                boolean isRequired = false;
-                for (String imp : REQUIRED_IMPORTS) {
-                    if (trimmed.equals(imp)) {
-                        isRequired = true;
-                        break;
-                    }
-                }
-                if (!isRequired) continue;
-            }
-            codeLines.add(line);
+        if (!code.contains("package " + PACKAGE_NAME)) {
+            code = "package " + PACKAGE_NAME + ";\n\n" + code;
         }
 
-        String result = String.join("\n", codeLines);
         for (String imp : REQUIRED_IMPORTS) {
-            if (!result.contains(imp)) {
-                int classIdx = result.indexOf("public class");
+            if (!code.contains(imp)) {
+                int classIdx = code.indexOf("public class");
                 if (classIdx > 0) {
-                    result = imp + "\n" + result.substring(0, classIdx) + result.substring(classIdx);
+                    code = code.substring(0, classIdx) + imp + "\n" + code.substring(classIdx);
                 } else {
-                    result = imp + "\n" + result;
+                    code = imp + "\n" + code;
                 }
             }
         }
 
-        result = result.replace("new CrossedUpRule(", "new CrossedUpIndicatorRule(");
-        result = result.replace("new CrossedDownRule(", "new CrossedDownIndicatorRule(");
+        code = code.replace("new CrossedUpRule(", "new CrossedUpIndicatorRule(");
+        code = code.replace("new CrossedDownRule(", "new CrossedDownIndicatorRule(");
 
-        result = result.replaceAll("(?m)^(\\s*)class\\s+(\\w+)", "$1public class $2");
+        code = code.replaceAll("(?m)^(\\s*)class\\s+(\\w+)", "$1public class $2");
 
-        return result;
+        return code;
     }
 
     public static class AiGenerateResult {

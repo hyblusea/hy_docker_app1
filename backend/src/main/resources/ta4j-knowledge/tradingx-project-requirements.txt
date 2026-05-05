@@ -65,7 +65,7 @@ Ta4j v0.22.6 does NOT have a KDJIndicator class. KDJ must be implemented using:
 
 Example:
 StochasticOscillatorKIndicator k = new StochasticOscillatorKIndicator(series, 9);
-StochasticOscillatorDIndicator d = new StochasticOscillatorDIndicator(k, 3);
+StochasticOscillatorDIndicator d = new StochasticOscillatorDIndicator(k);  // D line is SMA(3) of K by default
 Rule entryRule = new CrossedUpIndicatorRule(k, d);    // golden cross
 Rule exitRule = new CrossedDownIndicatorRule(k, d);   // death cross
 return new BaseStrategy("KDJCrossStrategy", entryRule, exitRule);

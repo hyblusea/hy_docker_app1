@@ -12,6 +12,17 @@ spring:
   application:
     name: tradingx-backend
 
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiConnectionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+
   datasource:
     url: jdbc:h2:file:./data/tradingx;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
@@ -32,19 +43,13 @@ spring:
       hibernate:
         format_sql: true
 
-  ai:
-    openai:
-      base-url: https://models.github.ai/inference
-      api-key: ${GITHUB_TOKEN:}
-      chat:
-        model: deepseek/DeepSeek-V3-0324
-        # model: openai/gpt-4.1
-        options:
-          temperature: 0
-          max-tokens: 4096
-      embedding:
-        options:
-          model: openai/text-embedding-3-small
+deepseek:
+  user-token: ${DEEPSEEK_USER_TOKEN:}
+
+mimo:
+  user-id: ${MIMO_USER_ID:}
+  xiaomichatbot-ph: ${MIMO_XIAOMICHATBOT_PH:}
+  service-token: ${MIMO_SERVICE_TOKEN:}
 
 tushare:
   api-url: https://api.tushare.pro
@@ -59,5 +64,4 @@ management:
 
 logging:
   level:
-    com.openai: DEBUG
-    okhttp3: DEBUG
+    com.tradingx: DEBUG

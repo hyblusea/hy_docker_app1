@@ -129,9 +129,12 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const [aiResult, setAiResult] = useState<{ suggestedName: string; code: string; valid: boolean; compileError: string } | null>(null)
   const [aiStrategyName, setAiStrategyName] = useState('')
   const [aiCode, setAiCode] = useState('')
+  const [aiRetryCount, setAiRetryCount] = useState(0)
+  const [aiMaxRetries, setAiMaxRetries] = useState(10)
   const aiAbortRef = useRef<AbortController | null>(null)
   const typingBufferRef = useRef('')
   const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const aiThinkingRef = useRef<HTMLDivElement | null>(null)
   const [codeImportModalOpen, setCodeImportModalOpen] = useState(false)
   const [codeImportName, setCodeImportName] = useState('')
   const [codeImportCode, setCodeImportCode] = useState('')
@@ -425,6 +428,12 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     }
   }, [newName, message, invalidateStrategies, handleLoad])
 
+  useEffect(() => {
+    if (aiThinkingRef.current) {
+      aiThinkingRef.current.scrollTop = aiThinkingRef.current.scrollHeight
+    }
+  }, [aiThinking])
+
   const handleAiGenerate = useCallback(() => {
     if (!aiBuyDesc.trim() || !aiSellDesc.trim()) {
       message.warning('请输入买入和卖出策略描述')
@@ -434,6 +443,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     setAiResult(null)
     setAiThinking('')
     setAiCode('')
+    setAiRetryCount(0)
     typingBufferRef.current = ''
     if (typingTimerRef.current) {
       clearInterval(typingTimerRef.current)
@@ -482,6 +492,12 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         typingBufferRef.current = ''
         message.error('AI生成失败: ' + msg)
         setAiGenerating(false)
+      },
+      (retryInfo) => {
+        setAiRetryCount(retryInfo.retryCount)
+        setAiMaxRetries(retryInfo.maxRetries)
+        setAiThinking('')
+        typingBufferRef.current = ''
       },
     )
     aiAbortRef.current = controller
@@ -1258,7 +1274,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       </Modal>
 
       <Modal
-        title={<span><BulbOutlined style={{ marginRight: 8, color: '#1677ff' }} />AI智能创建策略</span>}
+        title={<span><BulbOutlined style={{ marginRight: 8, color: '#1677ff' }} />AI智能创建策略 {aiGenerating && aiRetryCount > 0 && <span style={{ color: '#faad14', fontSize: 12 }}>(重试 {aiRetryCount}/{aiMaxRetries})</span>}</span>}
         open={aiModalOpen}
         onCancel={() => {
           aiAbortRef.current?.abort()
@@ -1271,6 +1287,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           setAiStrategyName('')
           setAiCode('')
           setAiThinking('')
+          setAiRetryCount(0)
         }}
         width={800}
         footer={aiResult ? [
@@ -1279,9 +1296,19 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             导入策略
           </Button>,
         ] : [
-          <Button key="cancel" onClick={() => setAiModalOpen(false)}>取消</Button>,
+          <Button key="cancel" onClick={() => {
+            if (aiGenerating) {
+              aiAbortRef.current?.abort()
+              aiAbortRef.current = null
+              setAiGenerating(false)
+              setAiRetryCount(0)
+              message.info('已取消AI生成')
+            } else {
+              setAiModalOpen(false)
+            }
+          }}>{aiGenerating ? '取消生成' : '关闭'}</Button>,
           <Button key="generate" type="primary" icon={<ThunderboltOutlined />} onClick={handleAiGenerate} loading={aiGenerating} disabled={!aiBuyDesc.trim() || !aiSellDesc.trim()}>
-            AI生成
+            {aiGenerating ? '生成中...' : 'AI生成'}
           </Button>,
         ]}
       >
@@ -1307,8 +1334,8 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 disabled={aiGenerating}
               />
             </div>
-            {aiGenerating && aiThinking && (
-              <div style={{
+            {aiGenerating && (
+              <div ref={aiThinkingRef} style={{
                 background: '#f6f8fa',
                 border: '1px solid #e8e8e8',
                 borderRadius: 8,
@@ -1322,14 +1349,14 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 fontFamily: 'monospace',
               }}>
                 <div style={{ marginBottom: 4, fontWeight: 600, color: '#1677ff', fontSize: 12 }}>
-                  💭 AI思考中...
+                  💭 AI思考中... {aiRetryCount > 0 && <span style={{ color: '#faad14' }}>(第{aiRetryCount}次重试)</span>}
                 </div>
-                {aiThinking}
+                {aiThinking || <span style={{ color: '#999' }}>等待AI响应...</span>}
               </div>
             )}
             {!aiGenerating && (
               <div style={{ color: '#999', fontSize: 12 }}>
-                提示：请尽量具体描述指标和参数，AI将自动生成Java策略代码
+                提示：请尽量具体描述指标和参数，AI将自动生成Java策略代码。编译失败时会自动重试最多{aiMaxRetries}次。
               </div>
             )}
           </div>

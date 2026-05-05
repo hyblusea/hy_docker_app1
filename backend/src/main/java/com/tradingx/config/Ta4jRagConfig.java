@@ -7,6 +7,7 @@ import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Slf4j
 @Configuration
+@ConditionalOnProperty(name = "tradingx.rag.enabled", havingValue = "true", matchIfMissing = false)
 public class Ta4jRagConfig {
 
     @Value("${tradingx.rag.vector-store-path:./data/ta4j-vector-store.json}")

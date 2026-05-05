@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @RestController
@@ -106,8 +107,13 @@ public class StrategyController {
         response.setHeader("X-Accel-Buffering", "no");
         response.setHeader("Connection", "keep-alive");
 
-        SseEmitter emitter = new SseEmitter(300000L);
+        SseEmitter emitter = new SseEmitter(600000L);
         ExecutorService executor = Executors.newSingleThreadExecutor();
+        AtomicBoolean cancelled = new AtomicBoolean(false);
+
+        emitter.onCompletion(() -> cancelled.set(true));
+        emitter.onTimeout(() -> cancelled.set(true));
+        emitter.onError(e -> cancelled.set(true));
 
         executor.execute(() -> {
             try {
@@ -117,12 +123,34 @@ public class StrategyController {
                     return;
                 }
 
-                AiStrategyService.AiGenerateResult result = aiStrategyService.generate(buyDesc, sellDesc, delta -> {
-                    try {
-                        emitter.send(SseEmitter.event().name("thinking").data(delta, MediaType.TEXT_PLAIN));
-                    } catch (IOException ignored) {
+                AiStrategyService.AiGenerateResult result = aiStrategyService.generate(
+                    buyDesc, 
+                    sellDesc, 
+                    delta -> {
+                        try {
+                            emitter.send(SseEmitter.event().name("thinking").data(delta, MediaType.TEXT_PLAIN));
+                        } catch (IOException ignored) {
+                        }
+                    },
+                    new AiStrategyService.RetryCallback() {
+                        @Override
+                        public void onRetry(int retryCount, int maxRetries, String error) {
+                            try {
+                                emitter.send(SseEmitter.event().name("retry").data(Map.of(
+                                    "retryCount", retryCount,
+                                    "maxRetries", maxRetries,
+                                    "error", error != null ? error : ""
+                                )));
+                            } catch (IOException ignored) {
+                            }
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return cancelled.get();
+                        }
                     }
-                });
+                );
 
                 emitter.send(SseEmitter.event().name("result").data(Map.of(
                         "suggestedName", result.suggestedName != null ? result.suggestedName : "",

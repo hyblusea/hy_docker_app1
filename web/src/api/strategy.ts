@@ -45,12 +45,19 @@ export async function validateCode(code: string): Promise<CodeValidateResult> {
   return apiPost<CodeValidateResult>('/strategy/validate-code', { code })
 }
 
+export interface RetryInfo {
+  retryCount: number
+  maxRetries: number
+  error: string
+}
+
 export function aiGenerateStrategyStream(
   buyDesc: string,
   sellDesc: string,
   onThinking: (chunk: string) => void,
   onResult: (result: AiGenerateResult) => void,
   onError: (msg: string) => void,
+  onRetry?: (info: RetryInfo) => void,
 ): AbortController {
   const controller = new AbortController()
 
@@ -94,6 +101,8 @@ export function aiGenerateStrategyStream(
               try { onResult(JSON.parse(currentData)) } catch { onError('解析结果失败') }
             } else if (currentEvent === 'error') {
               onError(currentData)
+            } else if (currentEvent === 'retry' && onRetry) {
+              try { onRetry(JSON.parse(currentData)) } catch { }
             }
             currentEvent = ''
             currentData = ''

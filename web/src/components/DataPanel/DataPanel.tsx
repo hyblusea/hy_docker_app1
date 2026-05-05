@@ -594,10 +594,11 @@ const DataPanel = ({ data, stockName, signals = [] }: DataPanelProps) => {
       } : undefined,
       axisPointer: {
         link: [{ xAxisIndex: 'all' }],
+        label: { show: false },
       },
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'cross' },
+        axisPointer: { type: 'cross', label: { show: false } },
         backgroundColor: bgCard,
         borderColor: axisColor,
         textStyle: { color: textPrimary, fontSize: 12 },

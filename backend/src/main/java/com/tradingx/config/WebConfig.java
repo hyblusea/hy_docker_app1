@@ -19,6 +19,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/auth/login",
                         "/api/auth/register",
                         "/api/health",
+                        "/api/strategy/ai-generate",
+                        "/api/strategy/ai-generate-stream",
                         "/h2-console/**",
                         "/h2-console",
                         "/webjars/**"

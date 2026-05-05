@@ -6,6 +6,7 @@ import com.tradingx.model.User;
 import com.tradingx.service.AiStrategyService;
 import com.tradingx.service.StrategyCompiler;
 import com.tradingx.service.StrategyService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -97,9 +98,13 @@ public class StrategyController {
     }
 
     @PostMapping(value = "/ai-generate-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter aiGenerateStream(@RequestBody Map<String, String> request, HttpSession session) {
+    public SseEmitter aiGenerateStream(@RequestBody Map<String, String> request, HttpSession session, HttpServletResponse response) {
         String buyDesc = request.get("buyDesc");
         String sellDesc = request.get("sellDesc");
+
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("X-Accel-Buffering", "no");
+        response.setHeader("Connection", "keep-alive");
 
         SseEmitter emitter = new SseEmitter(300000L);
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -114,7 +119,7 @@ public class StrategyController {
 
                 AiStrategyService.AiGenerateResult result = aiStrategyService.generate(buyDesc, sellDesc, delta -> {
                     try {
-                        emitter.send(SseEmitter.event().name("thinking").data(delta));
+                        emitter.send(SseEmitter.event().name("thinking").data(delta, MediaType.TEXT_PLAIN));
                     } catch (IOException ignored) {
                     }
                 });

@@ -71,32 +71,32 @@ export function aiGenerateStrategyStream(
       const decoder = new TextDecoder()
       let buffer = ''
       let currentEvent = ''
+      let currentData = ''
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         buffer += decoder.decode(value, { stream: true })
 
-        const parts = buffer.split('\n\n')
-        buffer = parts.pop() || ''
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
 
-        for (const part of parts) {
-          currentEvent = ''
-          let dataStr = ''
-          for (const line of part.split('\n')) {
-            if (line.startsWith('event:')) {
-              currentEvent = line.slice(6).trim()
-            } else if (line.startsWith('data:')) {
-              dataStr = line.slice(5).trim()
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            currentEvent = line.slice(6).trim()
+            currentData = ''
+          } else if (line.startsWith('data:')) {
+            currentData = line.slice(5)
+          } else if (line === '' && currentEvent && currentData) {
+            if (currentEvent === 'thinking') {
+              onThinking(currentData)
+            } else if (currentEvent === 'result') {
+              try { onResult(JSON.parse(currentData)) } catch { onError('解析结果失败') }
+            } else if (currentEvent === 'error') {
+              onError(currentData)
             }
-          }
-          if (!dataStr) continue
-          if (currentEvent === 'thinking') {
-            onThinking(dataStr)
-          } else if (currentEvent === 'result') {
-            try { onResult(JSON.parse(dataStr)) } catch { onError('解析结果失败') }
-          } else if (currentEvent === 'error') {
-            onError(dataStr)
+            currentEvent = ''
+            currentData = ''
           }
         }
       }

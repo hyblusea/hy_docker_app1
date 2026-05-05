@@ -11,7 +11,7 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-// ... other ta4j v0.22.6 imports
+// ... other ta4j v0.22.6 imports from the API catalog
 
 public class MyStrategy {
     public static Strategy buildStrategy(BarSeries series) {
@@ -27,42 +27,45 @@ public class MyStrategy {
 1. Package name MUST be: com.tradingx.strategy
 2. Class MUST be public
 3. MUST have a static method: public static Strategy buildStrategy(BarSeries series)
-4. MUST return a BaseStrategy instance
-5. ONLY import from ta4j v0.22.6 - do NOT use APIs from other versions
+4. MUST return a BaseStrategy instance: new BaseStrategy("StrategyName", entryRule, exitRule)
+5. ONLY use classes from the ta4j-api-catalog.txt reference - if a class is NOT in the catalog, it does NOT exist in v0.22.6
+6. NEVER use classes from org.ta4j.core.trading package - this package does NOT exist in v0.22.6
 
-== Common Mistakes to Avoid ==
+== CRITICAL CONSTRAINT: Only Use Classes From The API Catalog ==
 
-WRONG (old API): import org.ta4j.core.indicators.SMAIndicator;
-CORRECT (v0.22.6): import org.ta4j.core.indicators.averages.SMAIndicator;
+The file ta4j-api-catalog.txt contains the COMPLETE list of all classes available in ta4j v0.22.6.
+You MUST ONLY use classes that appear in that catalog.
+If you want to use a class that is NOT in the catalog, it means that class does NOT exist in v0.22.6.
 
-WRONG (old API): import org.ta4j.core.indicators.ADXIndicator;
-CORRECT (v0.22.6): import org.ta4j.core.indicators.adx.ADXIndicator;
+Common non-existent classes and their correct alternatives:
+- KDJIndicator does NOT exist -> use StochasticOscillatorKIndicator + StochasticOscillatorDIndicator
+- MACDSignalIndicator does NOT exist -> use EMAIndicator of MACDIndicator result
+- The package org.ta4j.core.trading does NOT exist -> use org.ta4j.core.rules, org.ta4j.core.num, etc.
 
-WRONG (old API): import org.ta4j.core.indicators.BollingerBandsMiddleIndicator;
-CORRECT (v0.22.6): import org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator;
+== v0.22.6 Package Structure (IMPORTANT) ==
 
-WRONG (old API): import org.ta4j.core.indicators.helpers.TRIndicator;
-CORRECT (v0.22.6): import org.ta4j.core.indicators.helpers.TRIndicator; (same path)
+Correct package paths in v0.22.6:
+- org.ta4j.core.num.Num (NOT org.ta4j.core.trading.Num)
+- org.ta4j.core.rules.CrossedUpIndicatorRule (NOT org.ta4j.core.trading.rules.CrossedUpIndicatorRule)
+- org.ta4j.core.rules.CrossedDownIndicatorRule (NOT org.ta4j.core.trading.rules.CrossedDownIndicatorRule)
+- org.ta4j.core.Strategy (NOT org.ta4j.core.trading.Strategy)
+- org.ta4j.core.BaseStrategy (requires name as first parameter)
+- org.ta4j.core.indicators.averages.SMAIndicator (NOT org.ta4j.core.indicators.SMAIndicator)
+- org.ta4j.core.indicators.averages.EMAIndicator (NOT org.ta4j.core.indicators.EMAIndicator)
+- org.ta4j.core.indicators.adx.ADXIndicator (NOT org.ta4j.core.indicators.ADXIndicator)
+- org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator (NOT org.ta4j.core.indicators.BollingerBandsMiddleIndicator)
+- org.ta4j.core.backtest.BarSeriesManager (NOT org.ta4j.core.BarSeriesManager)
 
-WRONG (old API): new BaseStrategy(entryRule, exitRule);
-CORRECT (v0.22.6): new BaseStrategy("StrategyName", entryRule, exitRule);
+== KDJ Implementation ==
 
-== v0.22.6 Package Changes from Older Versions ==
+Ta4j v0.22.6 does NOT have a KDJIndicator class. KDJ must be implemented using:
+- StochasticOscillatorKIndicator = K line
+- StochasticOscillatorDIndicator = D line
+- J line = 3*K - 2*D (use CombineIndicator if needed)
 
-- SMAIndicator moved from org.ta4j.core.indicators to org.ta4j.core.indicators.averages
-- EMAIndicator moved from org.ta4j.core.indicators to org.ta4j.core.indicators.averages
-- WMAIndicator moved from org.ta4j.core.indicators to org.ta4j.core.indicators.averages
-- LWMAIndicator moved from org.ta4j.core.indicators to org.ta4j.core.indicators.averages
-- ADXIndicator moved from org.ta4j.core.indicators to org.ta4j.core.indicators.adx
-- PlusDIIndicator moved from org.ta4j.core.indicators to org.ta4j.core.indicators.adx
-- MinusDIIndicator moved from org.ta4j.core.indicators to org.ta4j.core.indicators.adx
-- BollingerBandsMiddleIndicator moved to org.ta4j.core.indicators.bollinger
-- BollingerBandsUpperIndicator moved to org.ta4j.core.indicators.bollinger
-- BollingerBandsLowerIndicator moved to org.ta4j.core.indicators.bollinger
-- Ichimoku indicators moved to org.ta4j.core.indicators.ichimoku
-- Volume indicators moved to org.ta4j.core.indicators.volume
-- Candlestick indicators moved to org.ta4j.core.indicators.candles
-- Statistical indicators moved to org.ta4j.core.indicators.statistics
-- BaseStrategy now requires a name as the first parameter
-- BarSeriesManager is now in org.ta4j.core.backtest package
-- DecimalNumFactory is used instead of DoubleNumFactory
+Example:
+StochasticOscillatorKIndicator k = new StochasticOscillatorKIndicator(series, 9);
+StochasticOscillatorDIndicator d = new StochasticOscillatorDIndicator(k, 3);
+Rule entryRule = new CrossedUpIndicatorRule(k, d);    // golden cross
+Rule exitRule = new CrossedDownIndicatorRule(k, d);   // death cross
+return new BaseStrategy("KDJCrossStrategy", entryRule, exitRule);

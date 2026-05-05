@@ -107,7 +107,7 @@ const LoginPage = () => {
           <StockOutlined className={styles.logoIcon} />
           <span>TradingX</span>
         </div>
-        <div className={styles.subtitle}>量化交易策略回测平台</div>
+        <div className={styles.subtitle}>策略回测平台</div>
 
         <div className={styles.tabBar}>
           <button

@@ -38,7 +38,7 @@ spring:
       api-key: ${GITHUB_TOKEN:}
       chat:
         model: deepseek/DeepSeek-V3-0324
-        # model: openai/gpt-4o
+        # model: openai/gpt-4.1
         options:
           temperature: 0
           max-tokens: 4096

@@ -130,6 +130,8 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const [aiStrategyName, setAiStrategyName] = useState('')
   const [aiCode, setAiCode] = useState('')
   const aiAbortRef = useRef<AbortController | null>(null)
+  const typingBufferRef = useRef('')
+  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [codeImportModalOpen, setCodeImportModalOpen] = useState(false)
   const [codeImportName, setCodeImportName] = useState('')
   const [codeImportCode, setCodeImportCode] = useState('')
@@ -432,14 +434,36 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     setAiResult(null)
     setAiThinking('')
     setAiCode('')
+    typingBufferRef.current = ''
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current)
+      typingTimerRef.current = null
+    }
+
+    typingTimerRef.current = setInterval(() => {
+      const buf = typingBufferRef.current
+      if (buf.length > 0) {
+        const charsToTake = Math.min(buf.length, 3)
+        typingBufferRef.current = buf.slice(charsToTake)
+        setAiThinking(prev => prev + buf.slice(0, charsToTake))
+      }
+    }, 20)
 
     const controller = aiGenerateStrategyStream(
       aiBuyDesc.trim(),
       aiSellDesc.trim(),
       (chunk) => {
-        setAiThinking(prev => prev + chunk)
+        typingBufferRef.current += chunk
       },
       (result) => {
+        if (typingTimerRef.current) {
+          clearInterval(typingTimerRef.current)
+          typingTimerRef.current = null
+        }
+        if (typingBufferRef.current.length > 0) {
+          setAiThinking(prev => prev + typingBufferRef.current)
+          typingBufferRef.current = ''
+        }
         setAiResult(result)
         setAiStrategyName(result.suggestedName || '')
         setAiCode(result.code || '')
@@ -451,6 +475,11 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         }
       },
       (msg) => {
+        if (typingTimerRef.current) {
+          clearInterval(typingTimerRef.current)
+          typingTimerRef.current = null
+        }
+        typingBufferRef.current = ''
         message.error('AI生成失败: ' + msg)
         setAiGenerating(false)
       },
@@ -1300,7 +1329,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             )}
             {!aiGenerating && (
               <div style={{ color: '#999', fontSize: 12 }}>
-                提示：请尽量具体描述指标和参数，AI将基于ta4j库生成Java策略代码
+                提示：请尽量具体描述指标和参数，AI将自动生成Java策略代码
               </div>
             )}
           </div>

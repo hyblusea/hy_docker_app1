@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Input, InputNumber, Select, Radio, App, Modal, Empty, Tooltip } from 'antd'
-import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined, ImportOutlined } from '@ant-design/icons'
 import Editor from '@monaco-editor/react'
-import { getStrategy, createStrategy, updateStrategy, deleteStrategy, aiGenerateStrategyStream } from '../api/strategy'
+import { getStrategy, createStrategy, updateStrategy, deleteStrategy, aiGenerateStrategyStream, validateCode } from '../api/strategy'
 import { useStrategies } from '../hooks/useStrategies'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -118,7 +118,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const [saving, setSaving] = useState(false)
   const [codeModalOpen, setCodeModalOpen] = useState(false)
   const { strategies: allStrategies, invalidate: invalidateStrategies } = useStrategies()
-  const strategyList = useMemo(() => allStrategies.filter(s => s.language === 'visual'), [allStrategies])
+  const strategyList = useMemo(() => allStrategies, [allStrategies])
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [newName, setNewName] = useState('')
   const [aiModalOpen, setAiModalOpen] = useState(false)
@@ -130,6 +130,13 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const [aiStrategyName, setAiStrategyName] = useState('')
   const [aiCode, setAiCode] = useState('')
   const aiAbortRef = useRef<AbortController | null>(null)
+  const [codeImportModalOpen, setCodeImportModalOpen] = useState(false)
+  const [codeImportName, setCodeImportName] = useState('')
+  const [codeImportCode, setCodeImportCode] = useState('')
+  const [codeImportValidating, setCodeImportValidating] = useState(false)
+  const [codeImportResult, setCodeImportResult] = useState<{ valid: boolean; compileError: string } | null>(null)
+  const [javaCodeView, setJavaCodeView] = useState('')
+  const [javaCodeEdited, setJavaCodeEdited] = useState(false)
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null)
   const [paletteFilter, setPaletteFilter] = useState('')
 
@@ -338,13 +345,43 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     }
   }, [strategyName, strategyId, config, message, invalidateStrategies])
 
+  const handleJavaSave = useCallback(async () => {
+    if (!strategyName.trim() || !strategyId || !javaCodeView.trim()) return
+    setSaving(true)
+    try {
+      const updated = await updateStrategy(strategyId, {
+        name: strategyName.trim(),
+        code: javaCodeView,
+      })
+      if (updated.valid) {
+        message.success('保存成功，代码编译通过')
+        setJavaCodeEdited(false)
+      } else {
+        message.warning('已保存，但代码编译未通过: ' + (updated.compile_error || ''))
+        setJavaCodeEdited(false)
+      }
+      onStrategyChanged?.()
+      invalidateStrategies()
+    } catch {
+      message.error('保存失败')
+    } finally {
+      setSaving(false)
+    }
+  }, [strategyName, strategyId, javaCodeView, message, invalidateStrategies])
+
   const handleLoad = useCallback(async (id: number) => {
     try {
       const s = await getStrategy(id)
-      if (s.language !== 'visual') {
-        message.warning('该策略不是可视化策略')
+      if (s.language === 'java') {
+        setStrategyId(s.id!)
+        setStrategyName(s.name)
+        setJavaCodeView(s.code || '')
+        setJavaCodeEdited(false)
+        setConfig(createDefaultConfig())
+        message.info('已加载Java代码策略')
         return
       }
+      setJavaCodeView('')
       const raw = JSON.parse(s.code)
       const parsed = migrateConfig(raw)
       setConfig(parsed)
@@ -360,6 +397,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     setConfig(createDefaultConfig())
     setStrategyId(null)
     setStrategyName('')
+    setJavaCodeView('')
   }, [])
 
   const handleCreate = useCallback(async () => {
@@ -449,6 +487,43 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       message.error('策略导入失败')
     }
   }, [aiStrategyName, aiCode, message, invalidateStrategies, handleLoad])
+
+  const handleCodeImport = useCallback(async () => {
+    if (!codeImportName.trim()) {
+      message.warning('请输入策略名称')
+      return
+    }
+    if (!codeImportCode.trim()) {
+      message.warning('请输入Java代码')
+      return
+    }
+    setCodeImportValidating(true)
+    setCodeImportResult(null)
+    try {
+      const result = await validateCode(codeImportCode.trim())
+      setCodeImportResult(result)
+      if (result.valid) {
+        await createStrategy({
+          name: codeImportName.trim(),
+          language: 'java',
+          code: codeImportCode.trim(),
+        })
+        message.success('代码导入成功，策略已创建')
+        setCodeImportModalOpen(false)
+        setCodeImportName('')
+        setCodeImportCode('')
+        setCodeImportResult(null)
+        onStrategyChanged?.()
+        invalidateStrategies()
+      } else {
+        message.warning('代码校验未通过，请检查代码')
+      }
+    } catch {
+      message.error('代码校验失败')
+    } finally {
+      setCodeImportValidating(false)
+    }
+  }, [codeImportName, codeImportCode, message, invalidateStrategies])
 
   const handleRename = useCallback(async (id: number) => {
     const s = strategyList.find((s) => s.id === id)
@@ -856,8 +931,13 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           <span className={styles.sidebarTitle}>策略列表</span>
           <div className={styles.sidebarActions}>
             <button className={styles.aiBtn} onClick={() => setAiModalOpen(true)}>
-              <BulbOutlined /> AI创建
+              <BulbOutlined /> AI生成
             </button>
+            <Tooltip title="导入Java策略">
+              <button className={styles.codeImportBtn} onClick={() => setCodeImportModalOpen(true)}>
+                <ImportOutlined />
+              </button>
+            </Tooltip>
             <Tooltip title="新建策略">
               <button className={styles.addBtn} onClick={() => setCreateModalOpen(true)}>
                 <PlusOutlined />
@@ -878,6 +958,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 </span>
               </Tooltip>
               <span className={styles.strategyName}>{s.name}</span>
+              {s.language === 'java' && <span className={styles.javaTag}>Java</span>}
               <div className={styles.strategyMeta}>
                 {isRoot && s.created_by && (
                   <span className={styles.strategyCreator}>{s.created_by}</span>
@@ -913,9 +994,10 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       </div>
 
       <div className={styles.mainArea}>
+        {!javaCodeView && (
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <span className={styles.headerTitle}>可视化指标编辑器</span>
+            <span className={styles.headerTitle}>可视化策略编辑器</span>
             {strategyName && <span className={styles.headerStrategyName}>{strategyName}</span>}
           </div>
           <div className={styles.headerRight}>
@@ -927,10 +1009,49 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             </Button>
           </div>
         </div>
+        )}
 
         {!strategyName.trim() ? (
           <div className={styles.builderDisabled}>
             <Empty description="请先从左侧选择或新建一个策略" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          </div>
+        ) : javaCodeView ? (
+          <div className={styles.javaCodeViewArea}>
+            <div className={styles.javaCodeViewHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#fa8c16', fontWeight: 500 }}>Java 代码策略</span>
+                {strategyName && <span className={styles.headerStrategyName}>{strategyName}</span>}
+                {javaCodeEdited && <span style={{ color: '#faad14', fontSize: 12 }}>* 未保存</span>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Button size="small" onClick={() => {
+                  navigator.clipboard.writeText(javaCodeView)
+                  message.success('代码已复制到剪贴板')
+                }}>复制代码</Button>
+                <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleJavaSave} loading={saving} disabled={!javaCodeEdited}>
+                  保存
+                </Button>
+              </div>
+            </div>
+            <Editor
+              height="calc(100% - 44px)"
+              language="java"
+              theme="vs-dark"
+              value={javaCodeView}
+              onChange={(v) => {
+                setJavaCodeView(v || '')
+                setJavaCodeEdited(true)
+              }}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                folding: true,
+                automaticLayout: true,
+              }}
+            />
           </div>
         ) : (
         <div className={styles.body}>
@@ -1226,6 +1347,77 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        title={<span><ImportOutlined style={{ marginRight: 8, color: '#52c41a' }} />代码导入策略</span>}
+        open={codeImportModalOpen}
+        onCancel={() => {
+          setCodeImportModalOpen(false)
+          setCodeImportName('')
+          setCodeImportCode('')
+          setCodeImportResult(null)
+        }}
+        width={800}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setCodeImportModalOpen(false)
+            setCodeImportName('')
+            setCodeImportCode('')
+            setCodeImportResult(null)
+          }}>取消</Button>,
+          <Button key="import" type="primary" icon={<ImportOutlined />} onClick={handleCodeImport} loading={codeImportValidating} disabled={!codeImportName.trim() || !codeImportCode.trim()}>
+            确认导入
+          </Button>,
+        ]}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+          <div>
+            <div style={{ marginBottom: 6, fontWeight: 500 }}>策略名称</div>
+            <Input
+              value={codeImportName}
+              onChange={(e) => setCodeImportName(e.target.value)}
+              placeholder="输入策略名称"
+            />
+          </div>
+          {codeImportResult && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontWeight: 500 }}>编译状态:</span>
+              {codeImportResult.valid ? (
+                <span style={{ color: '#52c41a' }}><CheckCircleOutlined /> 编译通过</span>
+              ) : (
+                <span style={{ color: '#ff4d4f' }}><CloseCircleOutlined /> 编译未通过</span>
+              )}
+            </div>
+          )}
+          {codeImportResult && !codeImportResult.valid && codeImportResult.compileError && (
+            <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6, padding: 8, fontSize: 12, color: '#cf1322', maxHeight: 80, overflow: 'auto' }}>
+              {codeImportResult.compileError}
+            </div>
+          )}
+          <div>
+            <div style={{ marginBottom: 6, fontWeight: 500 }}>Java策略代码</div>
+            <Editor
+              height="360px"
+              language="java"
+              theme="vs-dark"
+              value={codeImportCode}
+              onChange={(v) => { setCodeImportCode(v || ''); setCodeImportResult(null) }}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                folding: true,
+                automaticLayout: true,
+              }}
+            />
+          </div>
+          <div style={{ color: '#999', fontSize: 12 }}>
+            提示：代码需包含 public class 声明，并提供以下任一入口：buildStrategy(BarSeries) 方法 或 继承 BaseStrategy 的 BarSeries 构造函数
+          </div>
+        </div>
       </Modal>
 
       <Modal

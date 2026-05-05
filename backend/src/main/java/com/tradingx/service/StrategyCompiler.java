@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.*;
@@ -35,18 +36,32 @@ public class StrategyCompiler {
 
         try {
             Class<?> clazz = compile(fullClassName, className, sourceCode);
-            Method method = clazz.getMethod("buildStrategy", BarSeries.class);
-            if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
-                return (Strategy) method.invoke(null, series);
+
+            try {
+                Method method = clazz.getMethod("buildStrategy", BarSeries.class);
+                if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
+                    return (Strategy) method.invoke(null, series);
+                }
+                Object instance = clazz.getDeclaredConstructor().newInstance();
+                Object result = method.invoke(instance, series);
+                if (result instanceof Strategy) {
+                    return (Strategy) result;
+                }
+                throw new IllegalStateException("buildStrategy 方法返回值类型不是 org.ta4j.core.Strategy");
+            } catch (NoSuchMethodException e) {
+                try {
+                    Constructor<?> ctor = clazz.getConstructor(BarSeries.class);
+                    Object instance = ctor.newInstance(series);
+                    if (instance instanceof Strategy) {
+                        return (Strategy) instance;
+                    }
+                    throw new IllegalStateException("构造函数创建的对象不是 org.ta4j.core.Strategy 类型");
+                } catch (NoSuchMethodException e2) {
+                    throw new IllegalArgumentException("策略类必须包含 public Strategy buildStrategy(BarSeries series) 方法，或带有 BarSeries 参数的构造函数");
+                }
             }
-            Object instance = clazz.getDeclaredConstructor().newInstance();
-            Object result = method.invoke(instance, series);
-            if (result instanceof Strategy) {
-                return (Strategy) result;
-            }
-            throw new IllegalStateException("buildStrategy 方法返回值类型不是 org.ta4j.core.Strategy");
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("策略类必须包含 public Strategy buildStrategy(BarSeries series) 方法");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
             log.error("策略编译或执行失败", e);
             throw new RuntimeException("策略执行失败: " + e.getMessage(), e);
@@ -67,10 +82,20 @@ public class StrategyCompiler {
                 : className;
         try {
             Class<?> clazz = compile(fullClassName, className, sourceCode);
+            boolean hasBuildStrategy = false;
+            boolean hasBarSeriesCtor = false;
             try {
                 clazz.getMethod("buildStrategy", BarSeries.class);
-            } catch (NoSuchMethodException e) {
-                return "策略类必须包含 public Strategy buildStrategy(BarSeries series) 方法";
+                hasBuildStrategy = true;
+            } catch (NoSuchMethodException ignored) {
+            }
+            try {
+                clazz.getConstructor(BarSeries.class);
+                hasBarSeriesCtor = true;
+            } catch (NoSuchMethodException ignored) {
+            }
+            if (!hasBuildStrategy && !hasBarSeriesCtor) {
+                return "策略类必须包含 public Strategy buildStrategy(BarSeries series) 方法，或带有 BarSeries 参数的构造函数（需继承 BaseStrategy）";
             }
             return null;
         } catch (Exception e) {

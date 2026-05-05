@@ -1,0 +1,92 @@
+Ta4j v0.22.6 Rules API Reference (Extracted from Source Code)
+==============================================================
+
+== Comparison Rules (org.ta4j.core.rules) ==
+
+CrossedUpIndicatorRule(Indicator<Num> indicator, Number threshold)
+CrossedUpIndicatorRule(Indicator<Num> indicator, Num threshold)
+CrossedUpIndicatorRule(Indicator<Num> first, Indicator<Num> second)
+
+CrossedDownIndicatorRule(Indicator<Num> indicator, Number threshold)
+CrossedDownIndicatorRule(Indicator<Num> indicator, Num threshold)
+CrossedDownIndicatorRule(Indicator<Num> first, Indicator<Num> second)
+
+OverIndicatorRule(Indicator<Num> indicator, Number threshold)
+OverIndicatorRule(Indicator<Num> indicator, Num threshold)
+OverIndicatorRule(Indicator<Num> first, Indicator<Num> second)
+
+UnderIndicatorRule(Indicator<Num> indicator, Number threshold)
+UnderIndicatorRule(Indicator<Num> indicator, Num threshold)
+UnderIndicatorRule(Indicator<Num> first, Indicator<Num> second)
+
+== Stop Rules (org.ta4j.core.rules) ==
+
+StopLossRule(Indicator<Num> priceIndicator, Number lossPercentage)
+StopLossRule(Indicator<Num> priceIndicator, Num lossPercentage)
+
+StopGainRule(Indicator<Num> priceIndicator, Number gainPercentage)
+StopGainRule(Indicator<Num> priceIndicator, Num gainPercentage)
+
+TrailingStopLossRule(Indicator<Num> indicator, Num lossPercentage)
+TrailingStopLossRule(Indicator<Num> indicator, Num lossPercentage, int barCount)
+
+AverageTrueRangeStopLossRule(Indicator<Num> closePrice, ATRIndicator atrIndicator, Num atrMultiplier)
+AverageTrueRangeStopGainRule(Indicator<Num> closePrice, ATRIndicator atrIndicator, Num atrMultiplier)
+
+BaseVolatilityStopLossRule(Indicator<Num> closePrice, Indicator<Num> volatilityIndicator, Num volatilityMultiplier)
+BaseVolatilityStopGainRule(Indicator<Num> closePrice, Indicator<Num> volatilityIndicator, Num volatilityMultiplier)
+
+FixedAmountStopLossRule(Indicator<Num> closePrice, Num fixedAmount)
+FixedAmountStopGainRule(Indicator<Num> closePrice, Num fixedAmount)
+
+== Trend Rules (org.ta4j.core.rules) ==
+
+IsRisingRule(Indicator<Num> ref, int barCount)
+IsRisingRule(Indicator<Num> ref, int barCount, double minStrenght)
+
+IsFallingRule(Indicator<Num> ref, int barCount)
+IsFallingRule(Indicator<Num> ref, int barCount, double minStrenght)
+
+== Extrema Rules (org.ta4j.core.rules) ==
+
+IsHighestRule(Indicator<Num> ref, int barCount)
+IsLowestRule(Indicator<Num> ref, int barCount)
+
+== Range Rules (org.ta4j.core.rules) ==
+
+InPipeRule(Indicator<Num> ref, Number upper, Number lower)
+InPipeRule(Indicator<Num> ref, Num upper, Num lower)
+InPipeRule(Indicator<Num> ref, Indicator<Num> upper, Indicator<Num> lower)
+
+InSlopeRule(Indicator<Num> ref, Num minSlope)
+InSlopeRule(Indicator<Num> ref, Num minSlope, Num maxSlope)
+InSlopeRule(Indicator<Num> ref, int nthPrevious, Num minSlope, Num maxSlope)
+
+== Boolean Rules (org.ta4j.core.rules) ==
+
+BooleanIndicatorRule(Indicator<Boolean> indicator)
+BooleanRule(boolean booleanValue)
+FixedRule(boolean... values)
+
+== Time Rules (org.ta4j.core.rules) ==
+
+DayOfWeekRule(DayOfWeek... days)
+HourOfDayRule(int... hours)
+
+== Logical Combination Rules (org.ta4j.core.rules) ==
+
+AndRule(Rule rule1, Rule rule2)
+OrRule(Rule rule1, Rule rule2)
+NotRule(Rule rule)
+XorRule(Rule rule1, Rule rule2)
+
+ChainRule(Rule entryRule, Rule exitRule, Rule... additionalRules)
+
+== Rule Interface Methods ==
+
+Rule.and(Rule other)
+Rule.or(Rule other)
+Rule.xor(Rule other)
+Rule.negation()
+boolean isSatisfied(int index)
+boolean isSatisfied(int index, TradingRecord tradingRecord)

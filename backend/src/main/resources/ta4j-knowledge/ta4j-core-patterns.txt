@@ -1,0 +1,53 @@
+Ta4j v0.22.6 Core API Reference
+================================
+
+This document describes the core API patterns for Ta4j v0.22.6.
+
+== Creating BarSeries ==
+
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.BaseBarSeriesBuilder;
+import org.ta4j.core.num.DecimalNumFactory;
+
+BarSeries series = new BaseBarSeriesBuilder()
+    .withName("mySeries")
+    .withNumFactory(DecimalNumFactory.getInstance())
+    .build();
+
+// Adding bars
+series.addBar(ZonedDateTime.now(), open, high, low, close, volume);
+
+== Building Strategy ==
+
+import org.ta4j.core.BaseStrategy;
+import org.ta4j.core.Rule;
+import org.ta4j.core.Strategy;
+
+// Create entry and exit rules
+Rule entryRule = ...;
+Rule exitRule = ...;
+
+// Build strategy
+Strategy strategy = new BaseStrategy("MyStrategy", entryRule, exitRule);
+
+// With unstable period (number of bars to skip at start)
+Strategy strategy = new BaseStrategy("MyStrategy", entryRule, exitRule, unstableBarCount);
+
+== Running Backtest ==
+
+import org.ta4j.core.backtest.BarSeriesManager;
+import org.ta4j.core.TradingRecord;
+
+BarSeriesManager seriesManager = new BarSeriesManager(series);
+TradingRecord tradingRecord = seriesManager.run(strategy);
+
+== Combining Rules ==
+
+// AND combination
+Rule combined = rule1.and(rule2);
+
+// OR combination
+Rule combined = rule1.or(rule2);
+
+// Negation
+Rule negated = rule1.negation();

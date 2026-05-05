@@ -1,6 +1,7 @@
 package com.tradingx.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -8,6 +9,9 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -22,9 +26,11 @@ public class AiStrategyService {
 
     private final StrategyCompiler strategyCompiler;
     private final ChatModel chatModel;
+    private final VectorStore vectorStore;
+    private ChatClient ragChatClient;
 
     private static final String SYSTEM_PROMPT = """
-            你是量化交易策略代码生成助手，你需要仔细了解ta4j v0.22.6库的使用,仔细阅读代码仓库https://github.com/ta4j/ta4j/tree/0.22.6 中的代码
+            你是量化交易策略代码生成助手。用户消息中包含了从ta4j v0.22.6官方文档和示例代码中检索到的参考资料，请严格参考这些内容来生成代码。
             根据用户描述生成java ta4j v0.22.6 库的策略类，包名 com.tradingx.strategy,
             不要使用了ta4j 其他版本的库，只能import v0.22.6版本的ta4j库
             输出格式:第一行"策略名称:XXX",空一行,然后用```java代码块输出完整java类代码```
@@ -38,9 +44,28 @@ public class AiStrategyService {
     @Value("${spring.ai.openai.chat.model}")
     private String modelName;
 
-    public AiStrategyService(StrategyCompiler strategyCompiler, ChatModel chatModel) {
+    public AiStrategyService(StrategyCompiler strategyCompiler, ChatModel chatModel, VectorStore vectorStore) {
         this.strategyCompiler = strategyCompiler;
         this.chatModel = chatModel;
+        this.vectorStore = vectorStore;
+    }
+
+    private ChatClient getRagChatClient() {
+        if (ragChatClient == null) {
+            ragChatClient = ChatClient.builder(chatModel)
+                    .defaultSystem(SYSTEM_PROMPT)
+                    .defaultOptions(OpenAiChatOptions.builder()
+                            .model(modelName)
+                            .temperature(0.0))
+                    .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore)
+                            .searchRequest(SearchRequest.builder()
+                                    .topK(5)
+                                    .similarityThreshold(0.5)
+                                    .build())
+                            .build())
+                    .build();
+        }
+        return ragChatClient;
     }
 
     private OpenAiChatOptions chatOptions() {
@@ -116,11 +141,32 @@ public class AiStrategyService {
     }
 
     private String callAiApi(String userPrompt, AiGenerateResult previousResult) {
+        if (previousResult == null) {
+            return getRagChatClient().prompt()
+                    .user(userPrompt)
+                    .call()
+                    .content();
+        }
         Prompt prompt = new Prompt(buildMessages(userPrompt, previousResult), chatOptions());
         return chatModel.call(prompt).getResult().getOutput().getText();
     }
 
     private String callAiApiStream(String userPrompt, AiGenerateResult previousResult, Consumer<String> onThinking) {
+        if (previousResult == null) {
+            StringBuilder fullContent = new StringBuilder();
+            getRagChatClient().prompt()
+                    .user(userPrompt)
+                    .stream()
+                    .content()
+                    .doOnNext(delta -> {
+                        if (delta != null && !delta.isEmpty()) {
+                            fullContent.append(delta);
+                            onThinking.accept(delta);
+                        }
+                    })
+                    .blockLast();
+            return fullContent.toString();
+        }
         Prompt prompt = new Prompt(buildMessages(userPrompt, previousResult), chatOptions());
         StringBuilder fullContent = new StringBuilder();
         chatModel.stream(prompt)

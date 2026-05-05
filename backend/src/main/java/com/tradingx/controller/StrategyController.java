@@ -4,6 +4,7 @@ import com.tradingx.model.R;
 import com.tradingx.model.Strategy;
 import com.tradingx.model.User;
 import com.tradingx.service.AiStrategyService;
+import com.tradingx.service.StrategyCompiler;
 import com.tradingx.service.StrategyService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class StrategyController {
 
     private final StrategyService strategyService;
     private final AiStrategyService aiStrategyService;
+    private final StrategyCompiler strategyCompiler;
 
     @GetMapping("/list")
     public R<List<Strategy>> list(HttpSession session) {
@@ -62,6 +64,20 @@ public class StrategyController {
     public R<Void> delete(@PathVariable Long id) {
         strategyService.delete(id);
         return R.ok(null);
+    }
+
+    @PostMapping("/validate-code")
+    public R<Map<String, Object>> validateCode(@RequestBody Map<String, String> request) {
+        String code = request.get("code");
+        if (code == null || code.isBlank()) {
+            return R.fail("代码不能为空");
+        }
+        String error = strategyCompiler.compileCheck(code);
+        boolean valid = error == null;
+        return R.ok(Map.of(
+                "valid", valid,
+                "compileError", error != null ? error : ""
+        ));
     }
 
     @PostMapping("/ai-generate")

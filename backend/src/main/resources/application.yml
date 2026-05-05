@@ -35,11 +35,16 @@ spring:
   ai:
     openai:
       base-url: https://models.github.ai/inference
+      api-key: ${GITHUB_TOKEN:}
       chat:
-        model: meta/Llama-4-Scout-17B-16E-Instruct
+        model: deepseek/DeepSeek-V3-0324
+        # model: openai/gpt-4o
         options:
           temperature: 0
           max-tokens: 4096
+      embedding:
+        options:
+          model: openai/text-embedding-3-small
 
 tushare:
   api-url: https://api.tushare.pro

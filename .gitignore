@@ -51,6 +51,7 @@ dist-ssr
 *.lock.db
 data/*.db
 data/*.lock.db
+**/ta4j-vector-store.json
 !data/tushare_stock_basic.csv
 
 *.class

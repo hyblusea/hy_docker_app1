@@ -22,6 +22,7 @@ COPY --from=frontend-build /app/dist /usr/share/nginx/html
 COPY web/nginx.conf /etc/nginx/nginx.conf
 COPY --from=backend-build /app/target/backend-0.0.1-SNAPSHOT.jar /app/app.jar
 COPY --from=backend-build /app/data/tushare_stock_basic.csv /app/static-data/tushare_stock_basic.csv
+COPY backend/data/ta4j-vector-store.json /app/data/ta4j-vector-store.json
 
 COPY start.sh /start.sh
 RUN chmod +x /start.sh

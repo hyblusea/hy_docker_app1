@@ -73,6 +73,28 @@
   background: #4096ff;
 }
 
+.codeImportBtn {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: #52c41a;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.codeImportBtn:hover {
+  background: #73d13d;
+}
+
 .addBtn:hover {
   background-color: var(--accent-light);
   border-color: var(--accent-color);
@@ -113,6 +135,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+}
+
+.javaTag {
+  font-size: 10px;
+  color: #fff;
+  background-color: #fa8c16;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 4px;
+  flex-shrink: 0;
 }
 
 .strategyCreator {
@@ -255,6 +287,25 @@
   gap: 12px;
   min-height: 0;
   overflow: hidden;
+}
+
+.javaCodeViewArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.javaCodeViewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .palette {

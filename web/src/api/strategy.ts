@@ -36,6 +36,15 @@ export async function aiGenerateStrategy(buyDesc: string, sellDesc: string): Pro
   return apiPost<AiGenerateResult>('/strategy/ai-generate', { buyDesc, sellDesc })
 }
 
+export interface CodeValidateResult {
+  valid: boolean
+  compileError: string
+}
+
+export async function validateCode(code: string): Promise<CodeValidateResult> {
+  return apiPost<CodeValidateResult>('/strategy/validate-code', { code })
+}
+
 export function aiGenerateStrategyStream(
   buyDesc: string,
   sellDesc: string,

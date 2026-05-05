@@ -47,12 +47,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [refreshUser])
 
   const login = useCallback(async (username: string, password: string) => {
+    clearStrategiesCache()
+    clearValidStrategiesCache()
     const u = await apiLogin(username, password)
     setUser(u)
   }, [])
 
   const logout = useCallback(async () => {
     await apiLogout()
+    clearStrategiesCache()
+    clearValidStrategiesCache()
     setUser(null)
   }, [])
 

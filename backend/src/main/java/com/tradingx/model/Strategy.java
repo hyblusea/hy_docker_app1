@@ -35,6 +35,10 @@ public class Strategy {
     @Column(name = "created_by")
     private String createdBy;
 
+    @JsonProperty("created_by_role")
+    @Column(name = "created_by_role")
+    private String createdByRole;
+
     @JsonProperty("created_at")
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

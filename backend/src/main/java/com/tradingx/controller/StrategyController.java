@@ -58,13 +58,15 @@ public class StrategyController {
     }
 
     @PutMapping("/{id:\\d+}")
-    public R<Strategy> update(@PathVariable Long id, @RequestBody Strategy strategy) {
-        return R.ok(strategyService.update(id, strategy));
+    public R<Strategy> update(@PathVariable Long id, @RequestBody Strategy strategy, HttpSession session) {
+        User user = getCurrentUser(session);
+        return R.ok(strategyService.update(id, strategy, user));
     }
 
     @DeleteMapping("/{id:\\d+}")
-    public R<Void> delete(@PathVariable Long id) {
-        strategyService.delete(id);
+    public R<Void> delete(@PathVariable Long id, HttpSession session) {
+        User user = getCurrentUser(session);
+        strategyService.delete(id, user);
         return R.ok(null);
     }
 
@@ -84,36 +86,53 @@ public class StrategyController {
 
     @PostMapping("/ai-generate")
     public R<Map<String, Object>> aiGenerate(@RequestBody Map<String, String> request) {
-        String buyDesc = request.get("buyDesc");
-        String sellDesc = request.get("sellDesc");
-        if (buyDesc == null || buyDesc.isBlank() || sellDesc == null || sellDesc.isBlank()) {
-            return R.fail("请输入买入和卖出策略描述");
+        if (!aiStrategyService.tryAcquire()) {
+            return R.fail("服务器正忙，请稍后再试");
         }
-        AiStrategyService.AiGenerateResult result = aiStrategyService.generate(buyDesc, sellDesc);
-        return R.ok(Map.of(
-                "suggestedName", result.suggestedName != null ? result.suggestedName : "",
-                "code", result.code != null ? result.code : "",
-                "valid", result.valid,
-                "compileError", result.compileError != null ? result.compileError : ""
-        ));
+        try {
+            String buyDesc = request.get("buyDesc");
+            String sellDesc = request.get("sellDesc");
+            if (buyDesc == null || buyDesc.isBlank() || sellDesc == null || sellDesc.isBlank()) {
+                return R.fail("请输入买入和卖出策略描述");
+            }
+            AiStrategyService.AiGenerateResult result = aiStrategyService.generate(buyDesc, sellDesc);
+            return R.ok(Map.of(
+                    "suggestedName", result.suggestedName != null ? result.suggestedName : "",
+                    "code", result.code != null ? result.code : "",
+                    "valid", result.valid,
+                    "compileError", result.compileError != null ? result.compileError : ""
+            ));
+        } finally {
+            aiStrategyService.release();
+        }
     }
 
     @PostMapping(value = "/ai-generate-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter aiGenerateStream(@RequestBody Map<String, String> request, HttpSession session, HttpServletResponse response) {
-        String buyDesc = request.get("buyDesc");
-        String sellDesc = request.get("sellDesc");
-
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response.setHeader("X-Accel-Buffering", "no");
         response.setHeader("Connection", "keep-alive");
 
         SseEmitter emitter = new SseEmitter(600000L);
+
+        if (!aiStrategyService.tryAcquire()) {
+            try {
+                emitter.send(SseEmitter.event().name("busy").data("服务器正忙，请稍后再试"));
+                emitter.complete();
+            } catch (IOException ignored) {
+            }
+            return emitter;
+        }
+
+        String buyDesc = request.get("buyDesc");
+        String sellDesc = request.get("sellDesc");
         ExecutorService executor = Executors.newSingleThreadExecutor();
         AtomicBoolean cancelled = new AtomicBoolean(false);
+        AtomicBoolean released = new AtomicBoolean(false);
 
-        emitter.onCompletion(() -> cancelled.set(true));
-        emitter.onTimeout(() -> cancelled.set(true));
-        emitter.onError(e -> cancelled.set(true));
+        emitter.onCompletion(() -> { cancelled.set(true); if (!released.get()) aiStrategyService.release(); });
+        emitter.onTimeout(() -> { cancelled.set(true); if (!released.get()) aiStrategyService.release(); });
+        emitter.onError(e -> { cancelled.set(true); if (!released.get()) aiStrategyService.release(); });
 
         executor.execute(() -> {
             try {
@@ -166,6 +185,8 @@ public class StrategyController {
                 }
                 emitter.completeWithError(e);
             } finally {
+                released.set(true);
+                aiStrategyService.release();
                 executor.shutdown();
             }
         });

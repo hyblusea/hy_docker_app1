@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,6 +19,7 @@ public class AiStrategyService {
     private final StrategyCompiler strategyCompiler;
     private final MimoWebClient mimoClient;
     private final DeepSeekWebClient deepSeekClient;
+    private final AtomicBoolean busy = new AtomicBoolean(false);
 
     private static final String SYSTEM_PROMPT = """
             基于 ta4j v0.22.6 库编写量化交易策略类代码,注意版本必须是v0.22.6,不能使用其他版本的库否则我编译会报错：
@@ -77,6 +79,14 @@ public class AiStrategyService {
     public interface RetryCallback {
         void onRetry(int retryCount, int maxRetries, String error);
         boolean isCancelled();
+    }
+
+    public boolean tryAcquire() {
+        return busy.compareAndSet(false, true);
+    }
+
+    public void release() {
+        busy.set(false);
     }
 
     public AiGenerateResult generate(String buyDesc, String sellDesc) {

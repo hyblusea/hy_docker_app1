@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { ConfigProvider, App as AntApp, Spin, theme as antdTheme } from 'antd'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import zhCN from 'antd/locale/zh_CN'
@@ -20,6 +20,12 @@ const ProtectedRoutes = () => {
   const handleHomeStateChange = useCallback((patch: Partial<HomePageState>) => {
     setHomeState(prev => ({ ...prev, ...patch }))
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      setHomeState(defaultHomePageState)
+    }
+  }, [user])
 
   const handleStrategyChanged = useCallback(() => {
     clearStrategiesCache()

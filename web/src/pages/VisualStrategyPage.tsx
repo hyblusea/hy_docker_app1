@@ -4,6 +4,7 @@ import { Button, Input, InputNumber, Select, Radio, App, Modal, Empty, Tooltip }
 import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined, ImportOutlined } from '@ant-design/icons'
 import Editor from '@monaco-editor/react'
 import { getStrategy, createStrategy, updateStrategy, deleteStrategy, aiGenerateStrategyStream, validateCode } from '../api/strategy'
+import type { Strategy } from '../types/strategy'
 import { useStrategies } from '../hooks/useStrategies'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -111,10 +112,11 @@ interface VisualStrategyPageProps {
 
 const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const { message, modal } = App.useApp()
-  const { isRoot } = useAuth()
+  const { isRoot, user } = useAuth()
   const [config, setConfig] = useState<VisualStrategyConfig>(createDefaultConfig)
   const [strategyId, setStrategyId] = useState<number | null>(null)
   const [strategyName, setStrategyName] = useState('')
+  const [strategyOwner, setStrategyOwner] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [codeModalOpen, setCodeModalOpen] = useState(false)
   const { strategies: allStrategies, invalidate: invalidateStrategies } = useStrategies()
@@ -377,6 +379,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const handleLoad = useCallback(async (id: number) => {
     try {
       const s = await getStrategy(id)
+      setStrategyOwner(s.created_by || null)
       if (s.language === 'java') {
         setStrategyId(s.id!)
         setStrategyName(s.name)
@@ -402,6 +405,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     setConfig(createDefaultConfig())
     setStrategyId(null)
     setStrategyName('')
+    setStrategyOwner(null)
     setJavaCodeView('')
   }, [])
 
@@ -498,6 +502,15 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         setAiMaxRetries(retryInfo.maxRetries)
         setAiThinking('')
         typingBufferRef.current = ''
+      },
+      (msg) => {
+        if (typingTimerRef.current) {
+          clearInterval(typingTimerRef.current)
+          typingTimerRef.current = null
+        }
+        typingBufferRef.current = ''
+        message.warning(msg)
+        setAiGenerating(false)
       },
     )
     aiAbortRef.current = controller
@@ -623,6 +636,13 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       },
     })
   }, [strategyId, message, modal, handleNew, invalidateStrategies])
+
+  const isOwner = useCallback((s: Strategy) => {
+    if (isRoot) return true
+    return s.created_by === user?.username
+  }, [isRoot, user])
+
+  const canEdit = isRoot || !strategyOwner || strategyOwner === user?.username
 
   const generatedCode = useMemo(() => {
     const className = strategyName.trim().replace(/[^a-zA-Z0-9]/g, '') || 'Strategy'
@@ -1004,14 +1024,19 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
               </Tooltip>
               <span className={styles.strategyName}>{s.name}</span>
               {s.language === 'java' && <span className={styles.javaTag}>Java</span>}
+              {s.created_by_role === 'root' && s.created_by !== user?.username && <span className={styles.javaTag} style={{ background: '#722ed1', color: '#fff' }}>共享</span>}
               <div className={styles.strategyMeta}>
                 {isRoot && s.created_by && (
+                  <span className={styles.strategyCreator}>{s.created_by}</span>
+                )}
+                {!isRoot && s.created_by && s.created_by !== user?.username && (
                   <span className={styles.strategyCreator}>{s.created_by}</span>
                 )}
                 {s.created_at && (
                   <span className={styles.strategyDate}>{new Date(s.created_at).toLocaleDateString()}</span>
                 )}
               </div>
+              {isOwner(s) && (
               <div className={styles.itemActions}>
                 <button
                   className={styles.actionBtn}
@@ -1028,6 +1053,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                   <DeleteOutlined />
                 </button>
               </div>
+              )}
             </div>
           ))}
           {strategyList.length === 0 && (
@@ -1049,7 +1075,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             <Button size="small" icon={<EyeOutlined />} onClick={() => setCodeModalOpen(true)} disabled={!strategyName.trim()}>
               查看代码
             </Button>
-            <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleSave} loading={saving} disabled={!strategyName.trim()}>
+            <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleSave} loading={saving} disabled={!strategyName.trim() || !canEdit}>
               保存
             </Button>
           </div>
@@ -1073,7 +1099,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                   navigator.clipboard.writeText(javaCodeView)
                   message.success('代码已复制到剪贴板')
                 }}>复制代码</Button>
-                <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleJavaSave} loading={saving} disabled={!javaCodeEdited}>
+                <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleJavaSave} loading={saving} disabled={!javaCodeEdited || !canEdit}>
                   保存
                 </Button>
               </div>
@@ -1276,6 +1302,8 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       <Modal
         title={<span><BulbOutlined style={{ marginRight: 8, color: '#1677ff' }} />AI智能创建策略 {aiGenerating && aiRetryCount > 0 && <span style={{ color: '#faad14', fontSize: 12 }}>(重试 {aiRetryCount}/{aiMaxRetries})</span>}</span>}
         open={aiModalOpen}
+        maskClosable={false}
+        keyboard={false}
         onCancel={() => {
           aiAbortRef.current?.abort()
           aiAbortRef.current = null

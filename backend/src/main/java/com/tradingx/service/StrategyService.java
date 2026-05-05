@@ -45,7 +45,7 @@ public class StrategyService {
         if (currentUser != null && "root".equals(currentUser.getRole())) {
             return listAll();
         }
-        return listByUser(currentUser.getUsername());
+        return strategyRepository.findVisibleByUser(currentUser.getUsername());
     }
 
     public List<Strategy> listValid() {
@@ -65,12 +65,16 @@ public class StrategyService {
             throw new ValidationException("策略语言不能为空");
         }
         strategy.setCreatedBy(currentUser.getUsername());
+        strategy.setCreatedByRole(currentUser.getRole());
         validateStrategy(strategy);
         return strategyRepository.save(strategy);
     }
 
-    public Strategy update(Long id, Strategy updates) {
+    public Strategy update(Long id, Strategy updates, User currentUser) {
         Strategy existing = getById(id);
+        if (!isOwner(existing, currentUser)) {
+            throw new ValidationException("只能修改自己创建的策略");
+        }
         boolean needRevalidate = false;
 
         if (updates.getName() != null) {
@@ -90,11 +94,18 @@ public class StrategyService {
         return strategyRepository.save(existing);
     }
 
-    public void delete(Long id) {
-        if (!strategyRepository.existsById(id)) {
-            throw new NotFoundException("策略不存在: " + id);
+    public void delete(Long id, User currentUser) {
+        Strategy existing = getById(id);
+        if (!isOwner(existing, currentUser)) {
+            throw new ValidationException("只能删除自己创建的策略");
         }
-        strategyRepository.deleteById(id);
+        strategyRepository.delete(existing);
+    }
+
+    private boolean isOwner(Strategy strategy, User currentUser) {
+        if (currentUser == null) return false;
+        if ("root".equals(currentUser.getRole())) return true;
+        return currentUser.getUsername().equals(strategy.getCreatedBy());
     }
 
     private void validateStrategy(Strategy strategy) {

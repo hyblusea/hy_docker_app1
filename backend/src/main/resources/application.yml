@@ -7,6 +7,12 @@ server:
       force: true
     session:
       timeout: 24h
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    max-connections: 300
+    connection-timeout: 60s
 
 spring:
   application:

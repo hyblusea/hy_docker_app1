@@ -6,6 +6,7 @@ export interface Strategy {
   valid?: boolean
   compile_error?: string
   created_by?: string
+  created_by_role?: string
   created_at?: string
   updated_at?: string
 }

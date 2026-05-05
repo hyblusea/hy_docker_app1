@@ -27,8 +27,15 @@ export async function fetchJson<T>(url: string, options?: RequestInit): Promise<
     throw new ForbiddenError(body.msg || '权限不足')
   }
   if (!res.ok) {
-    const body = await res.json().catch(() => ({ msg: `HTTP ${res.status}` }))
-    throw new Error(body.msg || `HTTP ${res.status}`)
+    const contentType = res.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      const body = await res.json().catch(() => ({ msg: `HTTP ${res.status}` }))
+      throw new Error(body.msg || `HTTP ${res.status}`)
+    }
+    if (res.status === 502 || res.status === 503 || res.status === 504) {
+      throw new Error('服务器暂时无法响应，请稍后再试')
+    }
+    throw new Error(`请求失败: HTTP ${res.status}`)
   }
   return res.json()
 }

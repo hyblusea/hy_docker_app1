@@ -58,6 +58,7 @@ export function aiGenerateStrategyStream(
   onResult: (result: AiGenerateResult) => void,
   onError: (msg: string) => void,
   onRetry?: (info: RetryInfo) => void,
+  onBusy?: (msg: string) => void,
 ): AbortController {
   const controller = new AbortController()
 
@@ -70,7 +71,11 @@ export function aiGenerateStrategyStream(
   })
     .then(async (res) => {
       if (!res.ok) {
-        onError(`请求失败: HTTP ${res.status}`)
+        if (res.status === 502 || res.status === 503 || res.status === 504) {
+          onError('服务器暂时无法响应，请稍后再试')
+        } else {
+          onError(`请求失败: HTTP ${res.status}`)
+        }
         return
       }
       const reader = res.body?.getReader()
@@ -101,6 +106,9 @@ export function aiGenerateStrategyStream(
               try { onResult(JSON.parse(currentData)) } catch { onError('解析结果失败') }
             } else if (currentEvent === 'error') {
               onError(currentData)
+            } else if (currentEvent === 'busy') {
+              if (onBusy) onBusy(currentData)
+              else onError(currentData)
             } else if (currentEvent === 'retry' && onRetry) {
               try { onRetry(JSON.parse(currentData)) } catch { }
             }

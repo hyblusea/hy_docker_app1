@@ -7,7 +7,15 @@ RUN mvn package -DskipTests -B
 
 FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
+
 COPY --from=build /app/target/backend-0.0.1-SNAPSHOT.jar app.jar
 COPY data/tushare_stock_basic.csv /app/static-data/tushare_stock_basic.csv
+
+RUN mkdir -p /app/dependency-jars && \
+    cd /app/dependency-jars && \
+    jar xf /app/app.jar BOOT-INF/lib/ && \
+    mv BOOT-INF/lib/* . && \
+    rm -rf BOOT-INF
+
 EXPOSE 8080
 ENTRYPOINT ["java", "-Xmx3.5g", "-jar", "app.jar"]

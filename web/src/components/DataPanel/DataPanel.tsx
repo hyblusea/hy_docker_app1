@@ -592,6 +592,9 @@ const DataPanel = ({ data, stockName, signals = [] }: DataPanelProps) => {
           fontWeight: 'normal',
         },
       } : undefined,
+      axisPointer: {
+        link: [{ xAxisIndex: 'all' }],
+      },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross' },

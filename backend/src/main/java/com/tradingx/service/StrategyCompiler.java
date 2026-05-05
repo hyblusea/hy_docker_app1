@@ -2,24 +2,22 @@ package com.tradingx.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ResourceUtils;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Strategy;
 
 import javax.tools.*;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
 
 @Slf4j
 @Component
@@ -28,6 +26,7 @@ public class StrategyCompiler {
     private static final Pattern CLASS_NAME_PATTERN = Pattern.compile("public\\s+class\\s+(\\w+)");
 
     private volatile String cachedClasspath = null;
+    private volatile boolean extracted = false;
 
     public Strategy compileAndRun(String sourceCode, BarSeries series) {
         String className = extractClassName(sourceCode);
@@ -209,29 +208,13 @@ public class StrategyCompiler {
     }
 
     private void addRuntimeClasspath(Set<String> classpathEntries) {
-        ClassLoader cl = getClass().getClassLoader();
-        Set<URL> urls = new LinkedHashSet<>();
+        addDockerDependencyJars(classpathEntries);
 
-        collectClassLoaderUrls(cl, urls);
-
-        for (URL url : urls) {
-            String path = url.getPath();
-            if (path.startsWith("file:")) {
-                path = path.substring(5);
-            }
-            if (path.contains("!") && path.contains(".jar")) {
-                int bangIndex = path.indexOf("!");
-                path = path.substring(0, bangIndex);
-                if (path.startsWith("/")) {
-                    path = path.substring(1);
-                }
-            }
-            if (!path.isBlank()) {
-                classpathEntries.add(path);
-            }
+        if (!extracted) {
+            extractFatJarDependencies(classpathEntries);
         }
 
-        addDockerDependencyJars(classpathEntries);
+        addClassLoaderUrls(classpathEntries);
 
         String javaHome = System.getProperty("java.home");
         if (javaHome != null) {
@@ -255,7 +238,74 @@ public class StrategyCompiler {
         }
     }
 
-    private void collectClassLoaderUrls(ClassLoader cl, Set<URL> urls) {
+    private void extractFatJarDependencies(Set<String> classpathEntries) {
+        String javaClassPath = System.getProperty("java.class.path");
+        if (javaClassPath == null || !javaClassPath.endsWith(".jar")) {
+            return;
+        }
+
+        File fatJar = new File(javaClassPath);
+        if (!fatJar.isFile()) {
+            return;
+        }
+
+        File extractDir = new File(fatJar.getParentFile(), "dependency-jars");
+        if (extractDir.isDirectory()) {
+            File[] existing = extractDir.listFiles((d, name) -> name.endsWith(".jar"));
+            if (existing != null && existing.length > 5) {
+                log.info("Using existing extracted JARs in {}", extractDir.getAbsolutePath());
+                for (File jar : existing) {
+                    classpathEntries.add(jar.getAbsolutePath());
+                }
+                extracted = true;
+                return;
+            }
+        }
+
+        try {
+            extractDir.mkdirs();
+            int count = extractBootInfLib(fatJar, extractDir);
+            log.info("Extracted {} JAR files from {} to {}", count, fatJar.getName(), extractDir.getAbsolutePath());
+
+            File[] jars = extractDir.listFiles((d, name) -> name.endsWith(".jar"));
+            if (jars != null) {
+                for (File jar : jars) {
+                    classpathEntries.add(jar.getAbsolutePath());
+                }
+            }
+            extracted = true;
+        } catch (Exception e) {
+            log.error("Failed to extract dependencies from fat jar: {}", e.getMessage(), e);
+        }
+    }
+
+    private int extractBootInfLib(File fatJar, File targetDir) throws IOException {
+        int count = 0;
+        try (JarFile jarFile = new JarFile(fatJar)) {
+            Enumeration<JarEntry> entries = jarFile.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                String name = entry.getName();
+                if (name.startsWith("BOOT-INF/lib/") && name.endsWith(".jar")) {
+                    String jarName = name.substring(name.lastIndexOf('/') + 1);
+                    File outFile = new File(targetDir, jarName);
+                    if (!outFile.exists()) {
+                        try (InputStream is = jarFile.getInputStream(entry);
+                             OutputStream os = new FileOutputStream(outFile)) {
+                            is.transferTo(os);
+                        }
+                    }
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private void addClassLoaderUrls(Set<String> classpathEntries) {
+        ClassLoader cl = getClass().getClassLoader();
+        Set<URL> urls = new LinkedHashSet<>();
+
         while (cl != null) {
             if (cl instanceof URLClassLoader) {
                 try {
@@ -270,38 +320,22 @@ public class StrategyCompiler {
             cl = cl.getParent();
         }
 
-        try {
-            String classResource = "org/ta4j/core/BarSeries.class";
-            URL resource = getClass().getClassLoader().getResource(classResource);
-            if (resource != null) {
-                log.info("Found ta4j BarSeries at: {}", resource);
-                urls.add(extractJarUrl(resource, classResource));
+        for (URL url : urls) {
+            String path = url.getPath();
+            if (path.startsWith("file:")) {
+                path = path.substring(5);
             }
-        } catch (Exception e) {
-            log.warn("Failed to locate ta4j core jar: {}", e.getMessage());
-        }
-
-        try {
-            String springResource = "org/springframework/boot/SpringApplication.class";
-            URL resource = getClass().getClassLoader().getResource(springResource);
-            if (resource != null) {
-                urls.add(extractJarUrl(resource, springResource));
+            if (path.contains("!") && path.contains(".jar")) {
+                int bangIndex = path.indexOf("!");
+                path = path.substring(0, bangIndex);
+                if (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
             }
-        } catch (Exception e) {
-            log.debug("Failed to locate spring boot jar: {}", e.getMessage());
-        }
-    }
-
-    private URL extractJarUrl(URL resource, String resourceName) throws Exception {
-        String externalForm = resource.toExternalForm();
-        if (externalForm.startsWith("jar:file:")) {
-            int bangIndex = externalForm.indexOf("!/");
-            if (bangIndex > 0) {
-                String jarPath = externalForm.substring(4, bangIndex);
-                return new URL(jarPath);
+            if (!path.isBlank()) {
+                classpathEntries.add(path);
             }
         }
-        return resource;
     }
 
     private static class JavaSourceFileObject extends SimpleJavaFileObject {

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Button, Input, InputNumber, Select, Radio, App, Modal, Empty, Tooltip } from 'antd'
-import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined, ImportOutlined } from '@ant-design/icons'
+import { Button, Input, InputNumber, Select, Radio, App, Modal, Empty, Tooltip, Spin } from 'antd'
+import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined, ImportOutlined, LoadingOutlined } from '@ant-design/icons'
 import Editor from '@monaco-editor/react'
 import { getStrategy, createStrategy, updateStrategy, deleteStrategy, aiGenerateStrategyStream, validateCode } from '../api/strategy'
 import type { Strategy } from '../types/strategy'
@@ -119,8 +119,9 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const [strategyOwner, setStrategyOwner] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [codeModalOpen, setCodeModalOpen] = useState(false)
-  const { strategies: allStrategies, invalidate: invalidateStrategies } = useStrategies()
+  const { strategies: allStrategies, loading: strategiesLoading, invalidate: invalidateStrategies } = useStrategies()
   const strategyList = useMemo(() => allStrategies, [allStrategies])
+  const [loadingStrategy, setLoadingStrategy] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [newName, setNewName] = useState('')
   const [aiModalOpen, setAiModalOpen] = useState(false)
@@ -377,6 +378,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   }, [strategyName, strategyId, javaCodeView, message, invalidateStrategies])
 
   const handleLoad = useCallback(async (id: number) => {
+    setLoadingStrategy(true)
     try {
       const s = await getStrategy(id)
       setStrategyOwner(s.created_by || null)
@@ -398,6 +400,8 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       message.success('加载成功')
     } catch {
       message.error('加载策略失败')
+    } finally {
+      setLoadingStrategy(false)
     }
   }, [message])
 
@@ -1011,6 +1015,12 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           </div>
         </div>
         <div className={styles.strategyList}>
+          {strategiesLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 100 }}>
+              <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+            </div>
+          ) : (
+          <>
           {strategyList.map((s) => (
             <div
               key={s.id}
@@ -1061,10 +1071,18 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
               暂无策略，点击 + 新建
             </div>
           )}
+          </>
+          )}
         </div>
       </div>
 
       <div className={styles.mainArea}>
+        {loadingStrategy ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} tip="加载策略中..." />
+          </div>
+        ) : (
+        <>
         {!javaCodeView && (
         <div className={styles.header}>
           <div className={styles.headerLeft}>
@@ -1279,6 +1297,8 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             </div>
           </div>
         </div>
+        )}
+        </>
         )}
       </div>
 

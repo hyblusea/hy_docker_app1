@@ -49,6 +49,10 @@ const tradingCompletions = (context: any) => {
 const tradingTheme = EditorView.baseTheme({
   '&': {
     fontSize: '13px',
+    height: '100%',
+  },
+  '.cm-scroller': {
+    overflow: 'auto',
   },
   '.cm-gutters': {
     backgroundColor: '#1e1e1e',
@@ -80,23 +84,25 @@ export default function JavaEditor({ value, onChange, height = '100%', readOnly 
   ], [readOnly])
 
   return (
-    <CodeMirror
-      value={value}
-      height={height}
-      theme={oneDark}
-      extensions={extensions}
-      onChange={onChange}
-      className={className}
-      basicSetup={{
-        lineNumbers: true,
-        highlightActiveLineGutter: true,
-        highlightActiveLine: true,
-        foldGutter: false,
-        bracketMatching: true,
-        closeBrackets: true,
-        autocompletion: false,
-        indentOnInput: true,
-      }}
-    />
+    <div style={{ height, overflow: 'hidden' }}>
+      <CodeMirror
+        value={value}
+        height="100%"
+        theme={oneDark}
+        extensions={extensions}
+        onChange={onChange}
+        className={className}
+        basicSetup={{
+          lineNumbers: true,
+          highlightActiveLineGutter: true,
+          highlightActiveLine: true,
+          foldGutter: false,
+          bracketMatching: true,
+          closeBrackets: true,
+          autocompletion: false,
+          indentOnInput: true,
+        }}
+      />
+    </div>
   )
 }

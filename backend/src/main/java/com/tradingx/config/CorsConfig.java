@@ -14,6 +14,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOriginPattern("http://localhost:*");
         config.addAllowedOriginPattern("https://*.clawcloudrun.com");
+        config.addAllowedOriginPattern("https://*.railway.app");
         config.addAllowedOriginPattern("https://localhost:*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");

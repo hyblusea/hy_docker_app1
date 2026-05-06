@@ -142,6 +142,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const [codeImportName, setCodeImportName] = useState('')
   const [codeImportCode, setCodeImportCode] = useState('')
   const [codeImportValidating, setCodeImportValidating] = useState(false)
+  const [aiImporting, setAiImporting] = useState(false)
   const [codeImportResult, setCodeImportResult] = useState<{ valid: boolean; compileError: string } | null>(null)
   const [javaCodeView, setJavaCodeView] = useState('')
   const [javaCodeEdited, setJavaCodeEdited] = useState(false)
@@ -529,6 +530,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       message.warning('没有可导入的代码')
       return
     }
+    setAiImporting(true)
     try {
       const s = await createStrategy({
         name: aiStrategyName.trim(),
@@ -547,6 +549,8 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       handleLoad(s.id!)
     } catch {
       message.error('策略导入失败')
+    } finally {
+      setAiImporting(false)
     }
   }, [aiStrategyName, aiCode, message, invalidateStrategies, handleLoad])
 
@@ -1193,7 +1197,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         width={800}
         footer={aiResult ? [
           <Button key="back" onClick={() => { setAiResult(null); setAiCode(''); setAiThinking('') }}>重新生成</Button>,
-          <Button key="import" type="primary" icon={<ThunderboltOutlined />} onClick={handleAiImport} disabled={!aiStrategyName.trim() || !aiCode.trim()}>
+          <Button key="import" type="primary" icon={<ThunderboltOutlined />} onClick={handleAiImport} loading={aiImporting} disabled={!aiStrategyName.trim() || !aiCode.trim()}>
             导入策略
           </Button>,
         ] : [

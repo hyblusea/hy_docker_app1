@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Input, InputNumber, Select, Radio, App, Modal, Empty, Tooltip, Spin } from 'antd'
 import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined, ImportOutlined, LoadingOutlined } from '@ant-design/icons'
-import Editor from '@monaco-editor/react'
+import JavaEditor from '../components/JavaEditor'
 import { getStrategy, createStrategy, updateStrategy, deleteStrategy, aiGenerateStrategyStream, validateCode } from '../api/strategy'
 import type { Strategy } from '../types/strategy'
 import { useStrategies } from '../hooks/useStrategies'
@@ -653,142 +653,6 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     return generateJavaCode(config, className)
   }, [config, strategyName])
 
-  const handleEditorMount = useCallback((_editor: any) => {
-  }, [])
-
-  const handleEditorBeforeMount = useCallback((monaco: any) => {
-    monaco.languages.setMonarchTokensProvider('java', {
-      keywords: [
-        'abstract', 'continue', 'for', 'new', 'switch', 'assert', 'default', 'goto',
-        'package', 'synchronized', 'boolean', 'do', 'if', 'private', 'this', 'break',
-        'double', 'implements', 'protected', 'throw', 'byte', 'else', 'import', 'public',
-        'throws', 'case', 'enum', 'instanceof', 'return', 'transient', 'catch', 'extends',
-        'int', 'short', 'try', 'char', 'final', 'interface', 'static', 'void', 'class',
-        'finally', 'long', 'strictfp', 'volatile', 'const', 'float', 'native', 'super', 'while',
-        'true', 'false', 'null',
-      ],
-      typeKeywords: [
-        'var', 'record', 'sealed', 'permits', 'non-sealed',
-        'BarSeries', 'BaseStrategy', 'Rule', 'Strategy', 'Indicator', 'Num',
-        'ClosePriceIndicator', 'OpenPriceIndicator', 'HighPriceIndicator', 'LowPriceIndicator',
-        'VolumeIndicator', 'SMAIndicator', 'EMAIndicator', 'WMAIndicator',
-        'RSIIndicator', 'MACDIndicator', 'StochasticOscillatorKIndicator',
-        'StochasticOscillatorDIndicator', 'BollingerBandsUpperIndicator',
-        'BollingerBandsLowerIndicator', 'BollingerBandsMiddleIndicator',
-        'ATRIndicator', 'CCIIndicator', 'ADXIndicator', 'ROCIndicator',
-        'StandardDeviationIndicator', 'VarianceIndicator', 'DifferenceIndicator',
-        'PreviousValueIndicator', 'SumIndicator', 'MultiplyIndicator',
-        'CrossedUpIndicatorRule', 'CrossedDownIndicatorRule',
-        'OverIndicatorRule', 'UnderIndicatorRule',
-        'IsRisingRule', 'IsFallingRule',
-        'BooleanRule', 'NotRule', 'ANDRule', 'ORRule',
-        'StopLossRule', 'StopGainRule', 'TrailingStopLossRule',
-        'InPipeRule', 'InSlopeRule', 'MaxTradeBarCountRule',
-      ],
-      operators: [
-        '=', '>', '<', '!', '~', '?', ':', '==', '<=', '>=', '!=', '&&', '||', '++',
-        '--', '+', '-', '*', '/', '&', '|', '^', '%', '<<', '>>', '>>>', '+=', '-=',
-        '*=', '/=', '&=', '|=', '^=', '%=', '<<=', '>>=', '>>>=',
-      ],
-      symbols: /[=><!~?:&|+\-*/^%]+/,
-      escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
-      digits: /\d+(_+\d+)*/,
-      octaldigits: /[0-7]+(_+[0-7]+)*/,
-      binarydigits: /[0-1]+(_+[0-1]+)*/,
-      hexdigits: /[[0-9a-fA-F]+(_+[0-9a-fA-F]+)*/,
-      tokenizer: {
-        root: [
-          [/[a-zA-Z_$][\w$]*/, {
-            cases: {
-              '@keywords': 'keyword',
-              '@typeKeywords': 'type',
-              '@default': 'identifier',
-            },
-          }],
-          { include: '@whitespace' },
-          [/(\/\*)/, 'comment', '@comment'],
-          [/[{}()\[\]]/, '@brackets'],
-          [/[<>](?!@symbols)/, '@brackets'],
-          [/@symbols/, {
-            cases: {
-              '@operators': 'operator',
-              '@default': '',
-            },
-          }],
-          [/@digits(([eE][\-+]?@digits)|([fFdDlL]?))?/, 'number'],
-          [/0[xX]@hexdigits(([eE][\-+]?@digits)|([fFdDlL]?))?/, 'number'],
-          [/0[oO]@octaldigits(([eE][\-+]?@digits)|([fFdDlL]?))?/, 'number'],
-          [/0[bB]@binarydigits(([eE][\-+]?@digits)|([fFdDlL]?))?/, 'number'],
-          [/[;,.]/, 'delimiter'],
-          [/"([^"\\]|\\.)*$/, 'string.invalid'],
-          [/"/, 'string', '@string'],
-          [/'[^\\']'/, 'string'],
-          [/(')(@escapes)(')/, ['string', 'string.escape', 'string']],
-          [/'/, 'string.invalid'],
-          [/@[a-zA-Z_$][\w$]*(\(.*?\))?/, 'annotation'],
-        ],
-        whitespace: [
-          [/[ \t\r\n]+/, 'white'],
-          [/\/\/.*$/, 'comment'],
-        ],
-        comment: [
-          [/[^\/*]+/, 'comment'],
-          [/\*\//, 'comment', '@pop'],
-          [/[\/*]/, 'comment'],
-        ],
-        string: [
-          [/[^\\"]+/, 'string'],
-          [/@escapes/, 'string.escape'],
-          [/\\./, 'string.escape.invalid'],
-          [/"/, 'string', '@pop'],
-        ],
-      },
-    })
-    monaco.languages.setLanguageConfiguration('java', {
-      comments: {
-        lineComment: '//',
-        blockComment: ['/*', '*/'],
-      },
-      brackets: [
-        ['{', '}'],
-        ['[', ']'],
-        ['(', ')'],
-      ],
-      autoClosingPairs: [
-        { open: '{', close: '}' },
-        { open: '[', close: ']' },
-        { open: '(', close: ')' },
-        { open: '"', close: '"' },
-        { open: "'", close: "'" },
-      ],
-    })
-    monaco.editor.defineTheme('tradingx-dark', {
-      base: 'vs-dark',
-      inherit: true,
-      rules: [
-        { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
-        { token: 'keyword', foreground: '569CD6' },
-        { token: 'string', foreground: 'CE9178' },
-        { token: 'string.escape', foreground: 'D7BA7D' },
-        { token: 'number', foreground: 'B5CEA8' },
-        { token: 'type', foreground: '4EC9B0' },
-        { token: 'identifier', foreground: '9CDCFE' },
-        { token: 'operator', foreground: 'D4D4D4' },
-        { token: 'delimiter', foreground: 'D4D4D4' },
-        { token: 'annotation', foreground: 'DCDCAA' },
-        { token: 'tag', foreground: '569CD6' },
-      ],
-      colors: {
-        'editor.background': '#1e1e1e',
-        'editor.foreground': '#d4d4d4',
-        'editorLineNumber.foreground': '#858585',
-        'editorLineNumber.activeForeground': '#c6c6c6',
-        'editor.selectionBackground': '#264f78',
-        'editor.lineHighlightBackground': '#2a2d2e',
-      },
-    })
-  }, [])
-
   const renderIndicatorCard = (ind: IndicatorNode) => {
     const def = getIndicatorDef(ind.type)
     if (!def) return null
@@ -1122,23 +986,12 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 </Button>
               </div>
             </div>
-            <Editor
+            <JavaEditor
               height="calc(100% - 44px)"
-              language="java"
-              theme="vs-dark"
               value={javaCodeView}
               onChange={(v) => {
                 setJavaCodeView(v || '')
                 setJavaCodeEdited(true)
-              }}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                folding: true,
-                automaticLayout: true,
               }}
             />
           </div>
@@ -1433,20 +1286,10 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             )}
             <div>
               <div style={{ marginBottom: 6, fontWeight: 500 }}>生成的Java代码（可编辑）</div>
-              <Editor
+              <JavaEditor
                 height="320px"
-                language="java"
-                theme="vs-dark"
                 value={aiCode}
                 onChange={(v) => setAiCode(v || '')}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 13,
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  wordWrap: 'on',
-                  folding: true,
-                }}
               />
             </div>
           </div>
@@ -1501,21 +1344,10 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           )}
           <div>
             <div style={{ marginBottom: 6, fontWeight: 500 }}>Java策略代码</div>
-            <Editor
+            <JavaEditor
               height="360px"
-              language="java"
-              theme="vs-dark"
               value={codeImportCode}
               onChange={(v) => { setCodeImportCode(v || ''); setCodeImportResult(null) }}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                folding: true,
-                automaticLayout: true,
-              }}
             />
           </div>
           <div style={{ color: '#999', fontSize: 12 }}>
@@ -1538,27 +1370,10 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           }}>复制代码</Button>,
         ]}
       >
-        <Editor
+        <JavaEditor
           height="100%"
-          language="java"
-          theme="tradingx-dark"
           value={generatedCode}
-          beforeMount={handleEditorBeforeMount}
-          onMount={handleEditorMount}
-          options={{
-            readOnly: true,
-            fontSize: 14,
-            lineNumbers: 'on',
-            folding: true,
-            foldingStrategy: 'indentation',
-            showFoldingControls: 'always',
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            automaticLayout: true,
-            wordWrap: 'on',
-            domReadOnly: true,
-            renderLineHighlight: 'all',
-          }}
+          readOnly
         />
       </Modal>
     </div>

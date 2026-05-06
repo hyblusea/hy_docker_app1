@@ -8,6 +8,29 @@ export default defineConfig({
       localsConvention: 'camelCaseOnly',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          codemirror: [
+            '@uiw/react-codemirror',
+            '@codemirror/lang-java',
+            '@codemirror/theme-one-dark',
+            '@codemirror/autocomplete',
+            '@codemirror/view',
+            '@codemirror/state',
+            '@codemirror/language',
+            '@codemirror/commands',
+            '@codemirror/search',
+            '@lezer/java',
+            '@lezer/lr',
+            '@lezer/highlight',
+            '@lezer/common',
+          ],
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
     proxy: {

@@ -145,6 +145,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   const [aiImporting, setAiImporting] = useState(false)
   const [codeImportResult, setCodeImportResult] = useState<{ valid: boolean; compileError: string } | null>(null)
   const [javaCodeView, setJavaCodeView] = useState('')
+  const [isJavaMode, setIsJavaMode] = useState(false)
   const [javaCodeEdited, setJavaCodeEdited] = useState(false)
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null)
   const [paletteFilter, setPaletteFilter] = useState('')
@@ -387,12 +388,14 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         setStrategyId(s.id!)
         setStrategyName(s.name)
         setJavaCodeView(s.code || '')
+        setIsJavaMode(true)
         setJavaCodeEdited(false)
         setConfig(createDefaultConfig())
         message.info('已加载Java代码策略')
         return
       }
       setJavaCodeView('')
+      setIsJavaMode(false)
       const raw = JSON.parse(s.code)
       const parsed = migrateConfig(raw)
       setConfig(parsed)
@@ -412,6 +415,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     setStrategyName('')
     setStrategyOwner(null)
     setJavaCodeView('')
+    setIsJavaMode(false)
   }, [])
 
   const handleCreate = useCallback(async () => {
@@ -1005,7 +1009,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           </div>
         ) : (
         <>
-        {!javaCodeView && (
+        {!isJavaMode && (
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <span className={styles.headerTitle}>可视化策略编辑器</span>
@@ -1026,7 +1030,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           <div className={styles.builderDisabled}>
             <Empty description="请先从左侧选择或新建一个策略" image={Empty.PRESENTED_IMAGE_SIMPLE} />
           </div>
-        ) : javaCodeView ? (
+        ) : isJavaMode ? (
           <div className={styles.javaCodeViewArea}>
             <div className={styles.javaCodeViewHeader}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

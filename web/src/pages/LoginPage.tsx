@@ -9,9 +9,9 @@ import styles from './LoginPage.module.css'
 const EMAIL_PATTERN = /^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$/
 
 const PWD_RULES = [
-  { key: 'length', label: '鑷冲皯6浣?, test: (p: string) => p.length >= 6 },
-  { key: 'letter', label: '鍖呭惈瀛楁瘝', test: (p: string) => /[a-zA-Z]/.test(p) },
-  { key: 'digit', label: '鍖呭惈鏁板瓧', test: (p: string) => /\d/.test(p) },
+  { key: 'length', label: '至少6位', test: (p: string) => p.length >= 6 },
+  { key: 'letter', label: '包含字母', test: (p: string) => /[a-zA-Z]/.test(p) },
+  { key: 'digit', label: '包含数字', test: (p: string) => /\d/.test(p) },
 ]
 
 const LoginPage = () => {
@@ -47,15 +47,15 @@ const LoginPage = () => {
   const handleLogin = async () => {
     setError('')
     if (!username.trim() || !password) {
-      setError('璇疯緭鍏ョ敤鎴峰悕鍜屽瘑鐮?)
+      setError('请输入用户名和密码')
       return
     }
     setLoading(true)
     try {
       await login(username.trim(), password)
-      message.success('鐧诲綍鎴愬姛')
+      message.success('登录成功')
     } catch (e: any) {
-      setError(e.message || '鐧诲綍澶辫触')
+      setError(e.message || '登录失败')
     } finally {
       setLoading(false)
     }
@@ -64,32 +64,32 @@ const LoginPage = () => {
   const handleRegister = async () => {
     setError('')
     if (!username.trim()) {
-      setError('璇疯緭鍏ラ偖绠卞湴鍧€')
+      setError('请输入邮箱地址')
       return
     }
     const emailPattern = EMAIL_PATTERN
     if (!emailPattern.test(username.trim())) {
-      setError('鐢ㄦ埛鍚嶅繀椤绘槸鏈夋晥鐨勯偖绠卞湴鍧€')
+      setError('用户名必须是有效的邮箱地址')
       return
     }
     const pwdPattern = /^(?=.*[a-zA-Z])(?=.*\d).{6,}$/
     if (!pwdPattern.test(password)) {
-      setError('瀵嗙爜蹇呴』澶т簬绛変簬6浣嶏紝涓斿繀椤诲寘鍚瓧姣嶅拰鏁板瓧')
+      setError('密码必须大于等于6位，且必须包含字母和数字')
       return
     }
     if (password !== confirmPassword) {
-      setError('涓ゆ杈撳叆鐨勫瘑鐮佷笉涓€鑷?)
+      setError('两次输入的密码不一致')
       return
     }
     setLoading(true)
     try {
       await register(username.trim(), password)
-      message.success('娉ㄥ唽鎴愬姛锛岃绛夊緟绠＄悊鍛樺鏍?)
+      message.success('注册成功，请等待管理员审核')
       setTab('login')
       setPassword('')
       setConfirmPassword('')
     } catch (e: any) {
-      setError(e.message || '娉ㄥ唽澶辫触')
+      setError(e.message || '注册失败')
     } finally {
       setLoading(false)
     }
@@ -108,27 +108,27 @@ const LoginPage = () => {
           <StockOutlined className={styles.logoIcon} />
           <span>TradingX</span>
         </div>
-        <div className={styles.subtitle}>绛栫暐鍥炴祴骞冲彴</div>
+        <div className={styles.subtitle}>策略回测平台</div>
 
         <div className={styles.tabBar}>
           <button
             className={tab === 'login' ? styles.tabActive : styles.tab}
             onClick={() => { setTab('login'); setError('') }}
           >
-            鐧诲綍
+            登录
           </button>
           <button
             className={tab === 'register' ? styles.tabActive : styles.tab}
             onClick={() => { setTab('register'); setError('') }}
           >
-            娉ㄥ唽
+            注册
           </button>
         </div>
 
         <div className={styles.form} onKeyDown={handleKeyDown}>
           <Input
             size="large"
-            placeholder={tab === 'login' ? '鐢ㄦ埛鍚?/ 閭' : '閭鍦板潃'}
+            placeholder={tab === 'login' ? '用户名 / 邮箱' : '邮箱地址'}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             type={tab === 'register' ? 'email' : 'text'}
@@ -136,12 +136,12 @@ const LoginPage = () => {
           {emailValid !== null && (
             <div className={`${styles.inlineHint} ${emailValid ? styles.inlineHintPass : styles.inlineHintFail}`}>
               {emailValid ? <CheckCircleFilled /> : <CloseCircleFilled />}
-              {emailValid ? '閭鏍煎紡姝ｇ‘' : '璇疯緭鍏ユ湁鏁堢殑閭鍦板潃'}
+              {emailValid ? '邮箱格式正确' : '请输入有效的邮箱地址'}
             </div>
           )}
           <Input.Password
             size="large"
-            placeholder="瀵嗙爜"
+            placeholder="密码"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -169,7 +169,7 @@ const LoginPage = () => {
           {tab === 'register' && (
             <Input.Password
               size="large"
-              placeholder="纭瀵嗙爜"
+              placeholder="确认密码"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
@@ -177,7 +177,7 @@ const LoginPage = () => {
           {confirmValid !== null && (
             <div className={`${styles.inlineHint} ${confirmValid ? styles.inlineHintPass : styles.inlineHintFail}`}>
               {confirmValid ? <CheckCircleFilled /> : <CloseCircleFilled />}
-              {confirmValid ? '瀵嗙爜涓€鑷? : '涓ゆ杈撳叆鐨勫瘑鐮佷笉涓€鑷?}
+              {confirmValid ? '密码一致' : '两次输入的密码不一致'}
             </div>
           )}
           <div className={styles.errorMsg}>{error}</div>
@@ -188,13 +188,13 @@ const LoginPage = () => {
             loading={loading}
             onClick={tab === 'login' ? handleLogin : handleRegister}
           >
-            {tab === 'login' ? '鐧?褰? : '娉?鍐?}
+            {tab === 'login' ? '登 录' : '注 册'}
           </Button>
         </div>
 
         {tab === 'register' && (
           <div className={styles.footer}>
-            娉ㄥ唽鍚庨渶绠＄悊鍛樺鏍搁€氳繃鎵嶈兘鐧诲綍
+            注册后需管理员审核通过才能登录
           </div>
         )}
       </div>

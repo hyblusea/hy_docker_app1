@@ -33,21 +33,21 @@ function isRuleAllowedInSection(ruleType: string, section: 'entry' | 'exit'): bo
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
-  '浠锋牸鎸囨爣': '馃挵',
-  '鍧囩嚎鎸囨爣': '馃搱',
-  '鎸崱鎸囨爣': '馃搳',
-  '缁熻鎸囨爣': '馃搲',
-  '杈呭姪鎸囨爣': '馃敡',
-  'K绾垮舰鎬?: '馃暞锔?,
-  '鎴愪氦閲忔寚鏍?: '馃摝',
-  'Ichimoku': '鈽侊笍',
-  '甯冩灄甯?: '馃幆',
-  '鎸囨爣杩愮畻': '馃М',
-  '姣旇緝瑙勫垯': '馃攢',
-  '椋庢帶瑙勫垯': '馃洝锔?,
-  '瓒嬪娍瑙勫垯': '馃搻',
-  '鑼冨洿瑙勫垯': '馃搹',
-  '鍏朵粬瑙勫垯': '鈿欙笍',
+  '价格指标': '💰',
+  '均线指标': '📈',
+  '振荡指标': '📊',
+  '统计指标': '📉',
+  '辅助指标': '🔧',
+  'K线形态': '🕯️',
+  '成交量指标': '📦',
+  'Ichimoku': '☁️',
+  '布林带': '🎯',
+  '指标运算': '🧮',
+  '比较规则': '🔀',
+  '风控规则': '🛡️',
+  '趋势规则': '📐',
+  '范围规则': '📏',
+  '其他规则': '⚙️',
 }
 
 type RulePath = (string | number)[]
@@ -319,7 +319,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
 
   const handleSave = useCallback(async () => {
     if (!strategyName.trim()) {
-      message.warning('璇疯緭鍏ョ瓥鐣ュ悕绉?)
+      message.warning('请输入策略名称')
       return
     }
     setSaving(true)
@@ -328,9 +328,9 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       if (strategyId) {
         const updated = await updateStrategy(strategyId, { name: strategyName.trim(), code })
         if (updated.valid) {
-          message.success('淇濆瓨鎴愬姛锛岀瓥鐣ラ厤缃湁鏁?)
+          message.success('保存成功，策略配置有效')
         } else {
-          message.warning('淇濆瓨鎴愬姛锛屼絾绛栫暐閰嶇疆鏃犳晥: ' + (updated.compile_error || ''))
+          message.warning('保存成功，但策略配置无效: ' + (updated.compile_error || ''))
         }
       } else {
         const s = await createStrategy({
@@ -340,15 +340,15 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         })
         setStrategyId(s.id!)
         if (s.valid) {
-          message.success('鍒涘缓鎴愬姛锛岀瓥鐣ラ厤缃湁鏁?)
+          message.success('创建成功，策略配置有效')
         } else {
-          message.warning('鍒涘缓鎴愬姛锛屼絾绛栫暐閰嶇疆鏃犳晥: ' + (s.compile_error || ''))
+          message.warning('创建成功，但策略配置无效: ' + (s.compile_error || ''))
         }
       }
       onStrategyChanged?.()
       invalidateStrategies()
     } catch {
-      message.error('淇濆瓨澶辫触')
+      message.error('保存失败')
     } finally {
       setSaving(false)
     }
@@ -363,16 +363,16 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         code: javaCodeView,
       })
       if (updated.valid) {
-        message.success('淇濆瓨鎴愬姛锛屼唬鐮佺紪璇戦€氳繃')
+        message.success('保存成功，代码编译通过')
         setJavaCodeEdited(false)
       } else {
-        message.warning('宸蹭繚瀛橈紝浣嗕唬鐮佺紪璇戞湭閫氳繃: ' + (updated.compile_error || ''))
+        message.warning('已保存，但代码编译未通过: ' + (updated.compile_error || ''))
         setJavaCodeEdited(false)
       }
       onStrategyChanged?.()
       invalidateStrategies()
     } catch {
-      message.error('淇濆瓨澶辫触')
+      message.error('保存失败')
     } finally {
       setSaving(false)
     }
@@ -389,7 +389,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         setJavaCodeView(s.code || '')
         setJavaCodeEdited(false)
         setConfig(createDefaultConfig())
-        message.info('宸插姞杞絁ava浠ｇ爜绛栫暐')
+        message.info('已加载Java代码策略')
         return
       }
       setJavaCodeView('')
@@ -398,9 +398,9 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       setConfig(parsed)
       setStrategyId(s.id!)
       setStrategyName(s.name)
-      message.success('鍔犺浇鎴愬姛')
+      message.success('加载成功')
     } catch {
-      message.error('鍔犺浇绛栫暐澶辫触')
+      message.error('加载策略失败')
     } finally {
       setLoadingStrategy(false)
     }
@@ -416,7 +416,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
 
   const handleCreate = useCallback(async () => {
     if (!newName.trim()) {
-      message.warning('璇疯緭鍏ョ瓥鐣ュ悕绉?)
+      message.warning('请输入策略名称')
       return
     }
     try {
@@ -426,14 +426,14 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         language: 'visual',
         code,
       })
-      message.success('鍒涘缓鎴愬姛')
+      message.success('创建成功')
       setCreateModalOpen(false)
       setNewName('')
       onStrategyChanged?.()
       invalidateStrategies()
       handleLoad(s.id!)
     } catch {
-      message.error('鍒涘缓澶辫触')
+      message.error('创建失败')
     }
   }, [newName, message, invalidateStrategies, handleLoad])
 
@@ -445,7 +445,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
 
   const handleAiGenerate = useCallback(() => {
     if (!aiBuyDesc.trim() || !aiSellDesc.trim()) {
-      message.warning('璇疯緭鍏ヤ拱鍏ュ拰鍗栧嚭绛栫暐鎻忚堪')
+      message.warning('请输入买入和卖出策略描述')
       return
     }
     setAiGenerating(true)
@@ -488,9 +488,9 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         setAiCode(result.code || '')
         setAiGenerating(false)
         if (result.valid) {
-          message.success('AI鐢熸垚鎴愬姛锛屼唬鐮佺紪璇戦€氳繃')
+          message.success('AI生成成功，代码编译通过')
         } else {
-          message.warning('AI鐢熸垚瀹屾垚锛屼絾浠ｇ爜缂栬瘧鏈€氳繃锛岃妫€鏌ユ垨鎵嬪姩淇敼')
+          message.warning('AI生成完成，但代码编译未通过，请检查或手动修改')
         }
       },
       (msg) => {
@@ -499,7 +499,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           typingTimerRef.current = null
         }
         typingBufferRef.current = ''
-        message.error('AI鐢熸垚澶辫触: ' + msg)
+        message.error('AI生成失败: ' + msg)
         setAiGenerating(false)
       },
       (retryInfo) => {
@@ -523,23 +523,23 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
 
   const handleAiImport = useCallback(async () => {
     if (!aiStrategyName.trim()) {
-      message.warning('璇疯緭鍏ョ瓥鐣ュ悕绉?)
+      message.warning('请输入策略名称')
       return
     }
     if (!aiCode.trim()) {
-      message.warning('娌℃湁鍙鍏ョ殑浠ｇ爜')
+      message.warning('没有可导入的代码')
       return
     }
     setAiImporting(true)
     try {
-      const description = `涔板叆绛栫暐: ${aiBuyDesc.trim()}\n鍗栧嚭绛栫暐: ${aiSellDesc.trim()}`
+      const description = `买入策略: ${aiBuyDesc.trim()}\n卖出策略: ${aiSellDesc.trim()}`
       const s = await createStrategy({
         name: aiStrategyName.trim(),
         language: 'java',
         code: aiCode.trim(),
         description,
       })
-      message.success('绛栫暐瀵煎叆鎴愬姛')
+      message.success('策略导入成功')
       setAiModalOpen(false)
       setAiBuyDesc('')
       setAiSellDesc('')
@@ -550,7 +550,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       invalidateStrategies()
       handleLoad(s.id!)
     } catch {
-      message.error('绛栫暐瀵煎叆澶辫触')
+      message.error('策略导入失败')
     } finally {
       setAiImporting(false)
     }
@@ -558,7 +558,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
 
   const handleCodeValidate = useCallback(async () => {
     if (!codeImportCode.trim()) {
-      message.warning('璇疯緭鍏ava浠ｇ爜')
+      message.warning('请输入Java代码')
       return
     }
     setCodeImportValidating(true)
@@ -567,12 +567,12 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       const result = await validateCode(codeImportCode.trim())
       setCodeImportResult(result)
       if (result.valid) {
-        message.success('浠ｇ爜鏍￠獙閫氳繃锛屽彲浠ュ鍏?)
+        message.success('代码校验通过，可以导入')
       } else {
-        message.warning('浠ｇ爜鏍￠獙鏈€氳繃锛岃淇敼鍚庨噸鏂伴獙璇?)
+        message.warning('代码校验未通过，请修改后重新验证')
       }
     } catch {
-      message.error('浠ｇ爜鏍￠獙澶辫触')
+      message.error('代码校验失败')
     } finally {
       setCodeImportValidating(false)
     }
@@ -580,11 +580,11 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
 
   const handleCodeImport = useCallback(async () => {
     if (!codeImportName.trim()) {
-      message.warning('璇疯緭鍏ョ瓥鐣ュ悕绉?)
+      message.warning('请输入策略名称')
       return
     }
     if (!codeImportResult?.valid) {
-      message.warning('璇峰厛楠岃瘉浠ｇ爜锛岀‘淇濈紪璇戦€氳繃鍚庡啀瀵煎叆')
+      message.warning('请先验证代码，确保编译通过后再导入')
       return
     }
     setCodeImportValidating(true)
@@ -594,7 +594,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         language: 'java',
         code: codeImportCode.trim(),
       })
-      message.success('浠ｇ爜瀵煎叆鎴愬姛锛岀瓥鐣ュ凡鍒涘缓')
+      message.success('代码导入成功，策略已创建')
       setCodeImportModalOpen(false)
       setCodeImportName('')
       setCodeImportCode('')
@@ -602,7 +602,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       onStrategyChanged?.()
       invalidateStrategies()
     } catch {
-      message.error('瀵煎叆澶辫触')
+      message.error('导入失败')
     } finally {
       setCodeImportValidating(false)
     }
@@ -613,7 +613,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     if (!s) return
     let renameValue = ''
     Modal.confirm({
-      title: '閲嶅懡鍚嶇瓥鐣?,
+      title: '重命名策略',
       width: s.description ? 520 : 416,
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -624,7 +624,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           {s.description && (
             <div style={{ marginTop: 4 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary, #666)' }}>AI鐢熸垚鎻忚堪</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary, #666)' }}>AI生成描述</span>
                 <Button
                   type="link"
                   size="small"
@@ -632,10 +632,10 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                   style={{ padding: 0, height: 'auto', fontSize: 12 }}
                   onClick={() => {
                     navigator.clipboard.writeText(s.description!)
-                    message.success('鎻忚堪宸插鍒跺埌鍓创鏉?)
+                    message.success('描述已复制到剪贴板')
                   }}
                 >
-                  澶嶅埗
+                  复制
                 </Button>
               </div>
               <div style={{
@@ -657,20 +657,20 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           )}
         </div>
       ),
-      okText: '纭畾',
-      cancelText: '鍙栨秷',
+      okText: '确定',
+      cancelText: '取消',
       onOk: async () => {
         if (!renameValue.trim()) return
         try {
           await updateStrategy(id, { name: renameValue.trim() })
-          message.success('閲嶅懡鍚嶆垚鍔?)
+          message.success('重命名成功')
           onStrategyChanged?.()
           invalidateStrategies()
           if (strategyId === id) {
             setStrategyName(renameValue.trim())
           }
         } catch {
-          message.error('閲嶅懡鍚嶅け璐?)
+          message.error('重命名失败')
         }
       },
     })
@@ -678,22 +678,22 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
 
   const handleDelete = useCallback(async (id: number) => {
     modal.confirm({
-      title: '纭鍒犻櫎',
-      content: '鍒犻櫎鍚庢棤娉曟仮澶嶏紝纭畾瑕佸垹闄よ绛栫暐鍚楋紵',
-      okText: '鍒犻櫎',
+      title: '确认删除',
+      content: '删除后无法恢复，确定要删除该策略吗？',
+      okText: '删除',
       okType: 'danger',
-      cancelText: '鍙栨秷',
+      cancelText: '取消',
       onOk: async () => {
         try {
           await deleteStrategy(id)
-          message.success('鍒犻櫎鎴愬姛')
+          message.success('删除成功')
           if (strategyId === id) {
             handleNew()
           }
           onStrategyChanged?.()
           invalidateStrategies()
         } catch {
-          message.error('鍒犻櫎澶辫触')
+          message.error('删除失败')
         }
       },
     })
@@ -717,8 +717,8 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     return (
       <div key={ind.id} className={styles.indicatorCard}>
         <div className={styles.cardHeader}>
-          <span className={styles.cardType}>{CATEGORY_ICONS[def.category] || '馃搳'} {def.label}</span>
-          <Tooltip title="鍒犻櫎鎸囨爣">
+          <span className={styles.cardType}>{CATEGORY_ICONS[def.category] || '📊'} {def.label}</span>
+          <Tooltip title="删除指标">
             <button className={styles.cardDeleteBtn} onClick={() => handleRemoveIndicator(ind.id)}>
               <DeleteOutlined />
             </button>
@@ -747,7 +747,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 value={ind.inputs[idx] || undefined}
                 onChange={(v) => handleUpdateIndicatorInput(ind.id, idx, v)}
                 options={indicatorOptions}
-                placeholder="閫夋嫨鎸囨爣"
+                placeholder="选择指标"
                 className={styles.paramSelect}
                 popupMatchSelectWidth={false}
               />
@@ -773,10 +773,10 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         <div className={styles.cardHeader}>
           <span className={styles.cardType}>
             {leaf.negated && <span className={styles.notBadge}>NOT</span>}
-            {CATEGORY_ICONS[def.category] || '馃攢'} {def.label}
+            {CATEGORY_ICONS[def.category] || '🔀'} {def.label}
           </span>
           <div className={styles.cardActions}>
-            <Tooltip title={leaf.negated ? '鍙栨秷鍙栧弽' : '鍙栧弽(NOT)'}>
+            <Tooltip title={leaf.negated ? '取消取反' : '取反(NOT)'}>
               <button
                 className={`${styles.cardActionBtn} ${leaf.negated ? styles.cardActionBtnActive : ''}`}
                 onClick={() => handleToggleNegate(section, path)}
@@ -784,7 +784,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 <SwapOutlined />
               </button>
             </Tooltip>
-            <Tooltip title="鍒犻櫎鏉′欢">
+            <Tooltip title="删除条件">
               <button className={styles.cardDeleteBtn} onClick={() => handleRemoveRuleNode(section, path)}>
                 <DeleteOutlined />
               </button>
@@ -814,7 +814,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 value={leaf.indicatorInputs[idx] || undefined}
                 onChange={(v) => handleUpdateLeafInput(section, path, idx, v)}
                 options={indicatorOptions}
-                placeholder="閫夋嫨鎸囨爣"
+                placeholder="选择指标"
                 className={styles.paramSelect}
                 popupMatchSelectWidth={false}
               />
@@ -846,7 +846,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           </div>
           {!isRoot && (
             <div className={styles.ruleGroupHeaderRight}>
-              <Tooltip title={group.negated ? '鍙栨秷鍙栧弽' : '鍙栧弽(NOT)'}>
+              <Tooltip title={group.negated ? '取消取反' : '取反(NOT)'}>
                 <button
                   className={`${styles.cardActionBtn} ${group.negated ? styles.cardActionBtnActive : ''}`}
                   onClick={() => handleToggleNegate(section, path)}
@@ -854,7 +854,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                   <SwapOutlined />
                 </button>
               </Tooltip>
-              <Tooltip title="鍒犻櫎鍒嗙粍">
+              <Tooltip title="删除分组">
                 <button className={styles.cardDeleteBtn} onClick={() => handleRemoveRuleNode(section, path)}>
                   <DeleteOutlined />
                 </button>
@@ -881,7 +881,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           }}
         >
           {group.children.length === 0 ? (
-            <Empty description="鎷栨嫿宸︿晶瑙勫垯缁勪欢鍒版澶? image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <Empty description="拖拽左侧规则组件到此处" image={Empty.PRESENTED_IMAGE_SIMPLE} />
           ) : (
             group.children.map((child, idx) => renderRuleNode(child, section, [...path, idx]))
           )}
@@ -889,11 +889,12 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         <div className={styles.ruleGroupFooter}>
           <Dropdown overlay={renderAddMenu(RULE_CATALOG.filter(d => isRuleAllowedInSection(d.type, section)), (type) => handleAddRuleToGroup(section, path, type))}>
             <Button size="small" type="dashed" icon={<PlusOutlined />}>
-              娣诲姞瑙勫垯
+              添加规则
             </Button>
           </Dropdown>
           <Button size="small" type="dashed" onClick={() => handleAddSubGroup(section, path)}>
-            + 瀛愬垎缁?          </Button>
+            + 子分组
+          </Button>
         </div>
       </div>
     )
@@ -907,7 +908,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           className={styles.addMenuItem}
           onClick={() => onClick(item.type)}
         >
-          <span className={styles.addMenuIcon}>{CATEGORY_ICONS[item.category] || '馃搶'}</span>
+          <span className={styles.addMenuIcon}>{CATEGORY_ICONS[item.category] || '📌'}</span>
           <span className={styles.addMenuLabel}>{item.label}</span>
         </button>
       ))}
@@ -918,17 +919,17 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     <div className={styles.container}>
       <div className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <span className={styles.sidebarTitle}>绛栫暐鍒楄〃</span>
+          <span className={styles.sidebarTitle}>策略列表</span>
           <div className={styles.sidebarActions}>
             <button className={styles.aiBtn} onClick={() => setAiModalOpen(true)}>
-              <BulbOutlined /> AI鐢熸垚
+              <BulbOutlined /> AI生成
             </button>
-            <Tooltip title="瀵煎叆Java绛栫暐">
+            <Tooltip title="导入Java策略">
               <button className={styles.codeImportBtn} onClick={() => setCodeImportModalOpen(true)}>
                 <ImportOutlined />
               </button>
             </Tooltip>
-            <Tooltip title="鏂板缓绛栫暐">
+            <Tooltip title="新建策略">
               <button className={styles.addBtn} onClick={() => setCreateModalOpen(true)}>
                 <PlusOutlined />
               </button>
@@ -948,14 +949,14 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
               className={strategyId === s.id ? styles.strategyItemActive : styles.strategyItem}
               onClick={() => handleLoad(s.id!)}
             >
-              <Tooltip title={s.valid === false ? `鏃犳晥: ${s.compile_error || '缂栬瘧澶辫触'}` : '鏈夋晥'} placement="right">
+              <Tooltip title={s.valid === false ? `无效: ${s.compile_error || '编译失败'}` : '有效'} placement="right">
                 <span className={s.valid === false ? styles.statusInvalid : styles.statusValid}>
                   {s.valid === false ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
                 </span>
               </Tooltip>
               <span className={styles.strategyName}>{s.name}</span>
               {s.language === 'java' && <span className={styles.javaTag}>Java</span>}
-              {s.created_by_role === 'root' && s.created_by !== user?.username && <span className={styles.javaTag} style={{ background: '#722ed1', color: '#fff' }}>鍏变韩</span>}
+              {s.created_by_role === 'root' && s.created_by !== user?.username && <span className={styles.javaTag} style={{ background: '#722ed1', color: '#fff' }}>共享</span>}
               <div className={styles.strategyMeta}>
                 {isRoot && s.created_by && (
                   <span className={styles.strategyCreator}>{s.created_by}</span>
@@ -972,13 +973,14 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 <button
                   className={styles.actionBtn}
                   onClick={(e) => { e.stopPropagation(); handleRename(s.id!) }}
-                  title="閲嶅懡鍚?
+                  title="重命名"
                 >
-                  鉁?                </button>
+                  ✎
+                </button>
                 <button
                   className={styles.actionBtn}
                   onClick={(e) => { e.stopPropagation(); handleDelete(s.id!) }}
-                  title="鍒犻櫎"
+                  title="删除"
                 >
                   <DeleteOutlined />
                 </button>
@@ -988,7 +990,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
           ))}
           {strategyList.length === 0 && (
             <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: 20 }}>
-              鏆傛棤绛栫暐锛岀偣鍑?+ 鏂板缓
+              暂无策略，点击 + 新建
             </div>
           )}
           </>
@@ -999,22 +1001,22 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       <div className={styles.mainArea}>
         {loadingStrategy ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} tip="鍔犺浇绛栫暐涓?.." />
+            <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} tip="加载策略中..." />
           </div>
         ) : (
         <>
         {!javaCodeView && (
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <span className={styles.headerTitle}>鍙鍖栫瓥鐣ョ紪杈戝櫒</span>
+            <span className={styles.headerTitle}>可视化策略编辑器</span>
             {strategyName && <span className={styles.headerStrategyName}>{strategyName}</span>}
           </div>
           <div className={styles.headerRight}>
             <Button size="small" icon={<EyeOutlined />} onClick={() => setCodeModalOpen(true)} disabled={!strategyName.trim()}>
-              鏌ョ湅浠ｇ爜
+              查看代码
             </Button>
             <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleSave} loading={saving} disabled={!strategyName.trim() || !canEdit}>
-              淇濆瓨
+              保存
             </Button>
           </div>
         </div>
@@ -1022,23 +1024,23 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
 
         {!strategyName.trim() ? (
           <div className={styles.builderDisabled}>
-            <Empty description="璇峰厛浠庡乏渚ч€夋嫨鎴栨柊寤轰竴涓瓥鐣? image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <Empty description="请先从左侧选择或新建一个策略" image={Empty.PRESENTED_IMAGE_SIMPLE} />
           </div>
         ) : javaCodeView ? (
           <div className={styles.javaCodeViewArea}>
             <div className={styles.javaCodeViewHeader}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ color: '#fa8c16', fontWeight: 500 }}>Java 浠ｇ爜绛栫暐</span>
+                <span style={{ color: '#fa8c16', fontWeight: 500 }}>Java 代码策略</span>
                 {strategyName && <span className={styles.headerStrategyName}>{strategyName}</span>}
-                {javaCodeEdited && <span style={{ color: '#faad14', fontSize: 12 }}>* 鏈繚瀛?/span>}
+                {javaCodeEdited && <span style={{ color: '#faad14', fontSize: 12 }}>* 未保存</span>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Button size="small" onClick={() => {
                   navigator.clipboard.writeText(javaCodeView)
-                  message.success('浠ｇ爜宸插鍒跺埌鍓创鏉?)
-                }}>澶嶅埗浠ｇ爜</Button>
+                  message.success('代码已复制到剪贴板')
+                }}>复制代码</Button>
                 <Button type="primary" size="small" icon={<SaveOutlined />} onClick={handleJavaSave} loading={saving} disabled={!javaCodeEdited || !canEdit}>
-                  淇濆瓨
+                  保存
                 </Button>
               </div>
             </div>
@@ -1056,14 +1058,14 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             <div className={styles.paletteSearch}>
               <Input
                 size="small"
-                placeholder="鎼滅储缁勪欢..."
+                placeholder="搜索组件..."
                 value={paletteFilter}
                 onChange={(e) => setPaletteFilter(e.target.value)}
                 allowClear
               />
             </div>
             <div className={styles.paletteSection}>
-              <div className={styles.paletteTitle}>馃搳 鎸囨爣缁勪欢</div>
+              <div className={styles.paletteTitle}>📊 指标组件</div>
               {filteredIndicatorCategories.map(cat => (
                 <div key={cat} className={styles.paletteCategory}>
                   <div className={styles.categoryLabel}>{cat}</div>
@@ -1089,7 +1091,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             </div>
             <div className={styles.paletteDivider} />
             <div className={styles.paletteSection}>
-              <div className={styles.paletteTitle}>馃攢 瑙勫垯缁勪欢</div>
+              <div className={styles.paletteTitle}>🔀 规则组件</div>
               {filteredRuleCategories.map(cat => (
                 <div key={cat} className={styles.paletteCategory}>
                   <div className={styles.categoryLabel}>{cat}</div>
@@ -1130,16 +1132,16 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
               }}
             >
               <div className={styles.sectionHeader}>
-                <span className={styles.sectionTitle}>馃搳 鎸囨爣瀹氫箟</span>
+                <span className={styles.sectionTitle}>📊 指标定义</span>
                 <Dropdown overlay={renderAddMenu(INDICATOR_CATALOG, handleAddIndicator)}>
                   <Button size="small" type="dashed" icon={<PlusOutlined />}>
-                    娣诲姞鎸囨爣
+                    添加指标
                   </Button>
                 </Dropdown>
               </div>
               <div className={styles.sectionBody}>
                 {config.indicators.length === 0 ? (
-                  <Empty description="鎷栨嫿宸︿晶鎸囨爣缁勪欢鍒版澶? image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  <Empty description="拖拽左侧指标组件到此处" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                 ) : (
                   <div className={styles.indicatorGrid}>
                     {config.indicators.map(renderIndicatorCard)}
@@ -1168,7 +1170,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 }}
               >
                 <div className={styles.sectionHeader}>
-                  <span className={styles.sectionTitle}>馃煝 鍏ュ満瑙勫垯閰嶇疆</span>
+                  <span className={styles.sectionTitle}>🟢 入场规则配置</span>
                 </div>
                 <div className={styles.sectionBody}>
                   {config.entryRule.kind === 'group'
@@ -1193,7 +1195,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 }}
               >
                 <div className={styles.sectionHeader}>
-                  <span className={styles.sectionTitle}>馃敶 鍑哄満瑙勫垯閰嶇疆</span>
+                  <span className={styles.sectionTitle}>🔴 出场规则配置</span>
                 </div>
                 <div className={styles.sectionBody}>
                   {config.exitRule.kind === 'group'
@@ -1211,16 +1213,16 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       </div>
 
       <Modal
-        title="鏂板缓绛栫暐"
+        title="新建策略"
         open={createModalOpen}
         onOk={handleCreate}
         onCancel={() => { setCreateModalOpen(false); setNewName('') }}
-        okText="鍒涘缓"
-        cancelText="鍙栨秷"
+        okText="创建"
+        cancelText="取消"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
           <Input
-            placeholder="绛栫暐鍚嶇О"
+            placeholder="策略名称"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
           />
@@ -1228,7 +1230,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       </Modal>
 
       <Modal
-        title={<span><BulbOutlined style={{ marginRight: 8, color: '#1677ff' }} />AI鏅鸿兘鍒涘缓绛栫暐 {aiGenerating && aiRetryCount > 0 && <span style={{ color: '#faad14', fontSize: 12 }}>(閲嶈瘯 {aiRetryCount}/{aiMaxRetries})</span>}</span>}
+        title={<span><BulbOutlined style={{ marginRight: 8, color: '#1677ff' }} />AI智能创建策略 {aiGenerating && aiRetryCount > 0 && <span style={{ color: '#faad14', fontSize: 12 }}>(重试 {aiRetryCount}/{aiMaxRetries})</span>}</span>}
         open={aiModalOpen}
         maskClosable={false}
         keyboard={false}
@@ -1247,9 +1249,9 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
         }}
         width={800}
         footer={aiResult ? [
-          <Button key="back" onClick={() => { setAiResult(null); setAiCode(''); setAiThinking('') }}>閲嶆柊鐢熸垚</Button>,
+          <Button key="back" onClick={() => { setAiResult(null); setAiCode(''); setAiThinking('') }}>重新生成</Button>,
           <Button key="import" type="primary" icon={<ThunderboltOutlined />} onClick={handleAiImport} loading={aiImporting} disabled={!aiStrategyName.trim() || !aiCode.trim()}>
-            瀵煎叆绛栫暐
+            导入策略
           </Button>,
         ] : [
           <Button key="cancel" onClick={() => {
@@ -1258,33 +1260,33 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
               aiAbortRef.current = null
               setAiGenerating(false)
               setAiRetryCount(0)
-              message.info('宸插彇娑圓I鐢熸垚')
+              message.info('已取消AI生成')
             } else {
               setAiModalOpen(false)
             }
-          }}>{aiGenerating ? '鍙栨秷鐢熸垚' : '鍏抽棴'}</Button>,
+          }}>{aiGenerating ? '取消生成' : '关闭'}</Button>,
           <Button key="generate" type="primary" icon={<ThunderboltOutlined />} onClick={handleAiGenerate} loading={aiGenerating} disabled={!aiBuyDesc.trim() || !aiSellDesc.trim()}>
-            {aiGenerating ? '鐢熸垚涓?..' : 'AI鐢熸垚'}
+            {aiGenerating ? '生成中...' : 'AI生成'}
           </Button>,
         ]}
       >
         {!aiResult ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
             <div>
-              <div style={{ marginBottom: 6, fontWeight: 500, color: '#52c41a' }}>涔板叆绛栫暐鎻忚堪</div>
+              <div style={{ marginBottom: 6, fontWeight: 500, color: '#52c41a' }}>买入策略描述</div>
               <Input.TextArea
                 rows={3}
-                placeholder="渚嬪锛歊SI浣庝簬30鏃朵拱鍏ワ紝涓旀敹鐩樹环鍦?0鏃ュ潎绾夸笂鏂?
+                placeholder="例如：RSI低于30时买入，且收盘价在20日均线上方"
                 value={aiBuyDesc}
                 onChange={(e) => setAiBuyDesc(e.target.value)}
                 disabled={aiGenerating}
               />
             </div>
             <div>
-              <div style={{ marginBottom: 6, fontWeight: 500, color: '#ff4d4f' }}>鍗栧嚭绛栫暐鎻忚堪</div>
+              <div style={{ marginBottom: 6, fontWeight: 500, color: '#ff4d4f' }}>卖出策略描述</div>
               <Input.TextArea
                 rows={3}
-                placeholder="渚嬪锛歊SI楂樹簬70鏃跺崠鍑猴紝鎴栨鎹?%"
+                placeholder="例如：RSI高于70时卖出，或止损5%"
                 value={aiSellDesc}
                 onChange={(e) => setAiSellDesc(e.target.value)}
                 disabled={aiGenerating}
@@ -1305,32 +1307,33 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
                 fontFamily: 'monospace',
               }}>
                 <div style={{ marginBottom: 4, fontWeight: 600, color: '#1677ff', fontSize: 12 }}>
-                  馃挱 AI鎬濊€冧腑... {aiRetryCount > 0 && <span style={{ color: '#faad14' }}>(绗瑊aiRetryCount}娆￠噸璇?</span>}
+                  💭 AI思考中... {aiRetryCount > 0 && <span style={{ color: '#faad14' }}>(第{aiRetryCount}次重试)</span>}
                 </div>
-                {aiThinking || <span style={{ color: '#999' }}>绛夊緟AI鍝嶅簲...</span>}
+                {aiThinking || <span style={{ color: '#999' }}>等待AI响应...</span>}
               </div>
             )}
             {!aiGenerating && (
               <div style={{ color: '#999', fontSize: 12 }}>
-                鎻愮ず锛氳灏介噺鍏蜂綋鎻忚堪鎸囨爣鍜屽弬鏁帮紝AI灏嗚嚜鍔ㄧ敓鎴怞ava绛栫暐浠ｇ爜銆傜紪璇戝け璐ユ椂浼氳嚜鍔ㄩ噸璇曟渶澶歿aiMaxRetries}娆°€?              </div>
+                提示：请尽量具体描述指标和参数，AI将自动生成Java策略代码。编译失败时会自动重试最多{aiMaxRetries}次。
+              </div>
             )}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
             <div>
-              <div style={{ marginBottom: 6, fontWeight: 500 }}>绛栫暐鍚嶇О</div>
+              <div style={{ marginBottom: 6, fontWeight: 500 }}>策略名称</div>
               <Input
                 value={aiStrategyName}
                 onChange={(e) => setAiStrategyName(e.target.value)}
-                placeholder="杈撳叆绛栫暐鍚嶇О"
+                placeholder="输入策略名称"
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontWeight: 500 }}>缂栬瘧鐘舵€?</span>
+              <span style={{ fontWeight: 500 }}>编译状态:</span>
               {aiResult.valid ? (
-                <span style={{ color: '#52c41a' }}><CheckCircleOutlined /> 缂栬瘧閫氳繃</span>
+                <span style={{ color: '#52c41a' }}><CheckCircleOutlined /> 编译通过</span>
               ) : (
-                <span style={{ color: '#ff4d4f' }}><CloseCircleOutlined /> 缂栬瘧鏈€氳繃</span>
+                <span style={{ color: '#ff4d4f' }}><CloseCircleOutlined /> 编译未通过</span>
               )}
             </div>
             {aiResult.compileError && (
@@ -1339,7 +1342,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
               </div>
             )}
             <div>
-              <div style={{ marginBottom: 6, fontWeight: 500 }}>鐢熸垚鐨凧ava浠ｇ爜锛堝彲缂栬緫锛?/div>
+              <div style={{ marginBottom: 6, fontWeight: 500 }}>生成的Java代码（可编辑）</div>
               <JavaEditor
                 height="320px"
                 value={aiCode}
@@ -1351,7 +1354,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       </Modal>
 
       <Modal
-        title={<span><ImportOutlined style={{ marginRight: 8, color: '#52c41a' }} />浠ｇ爜瀵煎叆绛栫暐</span>}
+        title={<span><ImportOutlined style={{ marginRight: 8, color: '#52c41a' }} />代码导入策略</span>}
         open={codeImportModalOpen}
         onCancel={() => {
           setCodeImportModalOpen(false)
@@ -1366,31 +1369,31 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             setCodeImportName('')
             setCodeImportCode('')
             setCodeImportResult(null)
-          }}>鍙栨秷</Button>,
+          }}>取消</Button>,
           <Button key="validate" icon={<CheckCircleOutlined />} onClick={handleCodeValidate} loading={codeImportValidating} disabled={!codeImportCode.trim()}>
-            楠岃瘉浠ｇ爜
+            验证代码
           </Button>,
           <Button key="import" type="primary" icon={<ImportOutlined />} onClick={handleCodeImport} disabled={!codeImportName.trim() || !codeImportResult?.valid}>
-            纭瀵煎叆
+            确认导入
           </Button>,
         ]}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
           <div>
-            <div style={{ marginBottom: 6, fontWeight: 500 }}>绛栫暐鍚嶇О</div>
+            <div style={{ marginBottom: 6, fontWeight: 500 }}>策略名称</div>
             <Input
               value={codeImportName}
               onChange={(e) => setCodeImportName(e.target.value)}
-              placeholder="杈撳叆绛栫暐鍚嶇О"
+              placeholder="输入策略名称"
             />
           </div>
           {codeImportResult && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontWeight: 500 }}>缂栬瘧鐘舵€?</span>
+              <span style={{ fontWeight: 500 }}>编译状态:</span>
               {codeImportResult.valid ? (
-                <span style={{ color: '#52c41a' }}><CheckCircleOutlined /> 缂栬瘧閫氳繃</span>
+                <span style={{ color: '#52c41a' }}><CheckCircleOutlined /> 编译通过</span>
               ) : (
-                <span style={{ color: '#ff4d4f' }}><CloseCircleOutlined /> 缂栬瘧鏈€氳繃</span>
+                <span style={{ color: '#ff4d4f' }}><CloseCircleOutlined /> 编译未通过</span>
               )}
             </div>
           )}
@@ -1400,7 +1403,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             </div>
           )}
           <div>
-            <div style={{ marginBottom: 6, fontWeight: 500 }}>Java绛栫暐浠ｇ爜</div>
+            <div style={{ marginBottom: 6, fontWeight: 500 }}>Java策略代码</div>
             <JavaEditor
               height="360px"
               value={codeImportCode}
@@ -1408,22 +1411,23 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             />
           </div>
           <div style={{ color: '#999', fontSize: 12 }}>
-            鎻愮ず锛氫唬鐮侀渶鍖呭惈 public class 澹版槑锛屽苟鎻愪緵浠ヤ笅浠讳竴鍏ュ彛锛歜uildStrategy(BarSeries) 鏂规硶 鎴?缁ф壙 BaseStrategy 鐨?BarSeries 鏋勯€犲嚱鏁?          </div>
+            提示：代码需包含 public class 声明，并提供以下任一入口：buildStrategy(BarSeries) 方法 或 继承 BaseStrategy 的 BarSeries 构造函数
+          </div>
         </div>
       </Modal>
 
       <Modal
-        title="鐢熸垚鐨凧ava浠ｇ爜"
+        title="生成的Java代码"
         open={codeModalOpen}
         onCancel={() => setCodeModalOpen(false)}
         width={1100}
         styles={{ body: { height: 520, padding: 0, overflow: 'hidden' } }}
         footer={[
-          <Button key="close" onClick={() => setCodeModalOpen(false)}>鍏抽棴</Button>,
+          <Button key="close" onClick={() => setCodeModalOpen(false)}>关闭</Button>,
           <Button key="copy" type="primary" onClick={() => {
             navigator.clipboard.writeText(generatedCode)
-            message.success('浠ｇ爜宸插鍒跺埌鍓创鏉?)
-          }}>澶嶅埗浠ｇ爜</Button>,
+            message.success('代码已复制到剪贴板')
+          }}>复制代码</Button>,
         ]}
       >
         <JavaEditor

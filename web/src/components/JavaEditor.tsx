@@ -30,15 +30,15 @@ const tradingCompletions = (context: any) => {
   if (!word || (word.from === word.to && !context.explicit)) return null
   const options = [
     ...tradingKeywords.map(k => ({ label: k, type: 'class' })),
-    { label: 'buildStrategy', type: 'function', detail: 'BarSeries 鈫?Strategy' },
-    { label: 'getNum', type: 'function', detail: '() 鈫?Num' },
-    { label: 'getValue', type: 'function', detail: '() 鈫?double' },
-    { label: 'getBarCount', type: 'function', detail: '() 鈫?int' },
-    { label: 'getClosePrice', type: 'function', detail: '() 鈫?Num' },
-    { label: 'getOpenPrice', type: 'function', detail: '() 鈫?Num' },
-    { label: 'getHighPrice', type: 'function', detail: '() 鈫?Num' },
-    { label: 'getLowPrice', type: 'function', detail: '() 鈫?Num' },
-    { label: 'getVolume', type: 'function', detail: '() 鈫?Num' },
+    { label: 'buildStrategy', type: 'function', detail: 'BarSeries → Strategy' },
+    { label: 'getNum', type: 'function', detail: '() → Num' },
+    { label: 'getValue', type: 'function', detail: '() → double' },
+    { label: 'getBarCount', type: 'function', detail: '() → int' },
+    { label: 'getClosePrice', type: 'function', detail: '() → Num' },
+    { label: 'getOpenPrice', type: 'function', detail: '() → Num' },
+    { label: 'getHighPrice', type: 'function', detail: '() → Num' },
+    { label: 'getLowPrice', type: 'function', detail: '() → Num' },
+    { label: 'getVolume', type: 'function', detail: '() → Num' },
   ]
   return {
     from: word.from,

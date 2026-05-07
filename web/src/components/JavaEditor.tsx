@@ -29,15 +29,15 @@ const tradingCompletions = (context: any) => {
   if (!word || (word.from === word.to && !context.explicit)) return null
   const options = [
     ...tradingKeywords.map(k => ({ label: k, type: 'class' })),
-    { label: 'buildStrategy', type: 'function', detail: 'BarSeries → Strategy' },
-    { label: 'getNum', type: 'function', detail: '() → Num' },
-    { label: 'getValue', type: 'function', detail: '() → double' },
-    { label: 'getBarCount', type: 'function', detail: '() → int' },
-    { label: 'getClosePrice', type: 'function', detail: '() → Num' },
-    { label: 'getOpenPrice', type: 'function', detail: '() → Num' },
-    { label: 'getHighPrice', type: 'function', detail: '() → Num' },
-    { label: 'getLowPrice', type: 'function', detail: '() → Num' },
-    { label: 'getVolume', type: 'function', detail: '() → Num' },
+    { label: 'buildStrategy', type: 'function', detail: 'BarSeries 鈫?Strategy' },
+    { label: 'getNum', type: 'function', detail: '() 鈫?Num' },
+    { label: 'getValue', type: 'function', detail: '() 鈫?double' },
+    { label: 'getBarCount', type: 'function', detail: '() 鈫?int' },
+    { label: 'getClosePrice', type: 'function', detail: '() 鈫?Num' },
+    { label: 'getOpenPrice', type: 'function', detail: '() 鈫?Num' },
+    { label: 'getHighPrice', type: 'function', detail: '() 鈫?Num' },
+    { label: 'getLowPrice', type: 'function', detail: '() 鈫?Num' },
+    { label: 'getVolume', type: 'function', detail: '() 鈫?Num' },
   ]
   return {
     from: word.from,
@@ -88,7 +88,7 @@ interface JavaEditorProps {
   className?: string
 }
 
-export default function JavaEditor({ value, onChange, height = '100%', readOnly = false, className }: JavaEditorProps) {
+export default function JavaEditor({ value, onChange, height, readOnly = false, className }: JavaEditorProps) {
   const extensions = useMemo(() => [
     java(),
     autocompletion({ override: [tradingCompletions] }),
@@ -97,8 +97,12 @@ export default function JavaEditor({ value, onChange, height = '100%', readOnly 
     ...(readOnly ? [EditorView.editable.of(false), EditorState.readOnly.of(true)] : []),
   ], [readOnly])
 
+  const wrapperStyle: React.CSSProperties = height
+    ? { height, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+    : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+
   return (
-    <div style={{ height, display: 'flex', flexDirection: 'column' }}>
+    <div style={wrapperStyle}>
       <CodeMirror
         value={value}
         height="100%"

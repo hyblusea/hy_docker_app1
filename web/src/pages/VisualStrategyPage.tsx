@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Input, InputNumber, Select, Radio, App, Modal, Empty, Tooltip, Spin } from 'antd'
-import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined, ImportOutlined, LoadingOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined, ImportOutlined, LoadingOutlined, CopyOutlined } from '@ant-design/icons'
 import JavaEditor from '../components/JavaEditor'
 import { getStrategy, createStrategy, updateStrategy, deleteStrategy, aiGenerateStrategyStream, validateCode } from '../api/strategy'
 import type { Strategy } from '../types/strategy'
@@ -532,10 +532,12 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     }
     setAiImporting(true)
     try {
+      const description = `买入策略: ${aiBuyDesc.trim()}\n卖出策略: ${aiSellDesc.trim()}`
       const s = await createStrategy({
         name: aiStrategyName.trim(),
         language: 'java',
         code: aiCode.trim(),
+        description,
       })
       message.success('策略导入成功')
       setAiModalOpen(false)
@@ -554,11 +556,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     }
   }, [aiStrategyName, aiCode, message, invalidateStrategies, handleLoad])
 
-  const handleCodeImport = useCallback(async () => {
-    if (!codeImportName.trim()) {
-      message.warning('请输入策略名称')
-      return
-    }
+  const handleCodeValidate = useCallback(async () => {
     if (!codeImportCode.trim()) {
       message.warning('请输入Java代码')
       return
@@ -569,27 +567,46 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
       const result = await validateCode(codeImportCode.trim())
       setCodeImportResult(result)
       if (result.valid) {
-        await createStrategy({
-          name: codeImportName.trim(),
-          language: 'java',
-          code: codeImportCode.trim(),
-        })
-        message.success('代码导入成功，策略已创建')
-        setCodeImportModalOpen(false)
-        setCodeImportName('')
-        setCodeImportCode('')
-        setCodeImportResult(null)
-        onStrategyChanged?.()
-        invalidateStrategies()
+        message.success('代码校验通过，可以导入')
       } else {
-        message.warning('代码校验未通过，请检查代码')
+        message.warning('代码校验未通过，请修改后重新验证')
       }
     } catch {
       message.error('代码校验失败')
     } finally {
       setCodeImportValidating(false)
     }
-  }, [codeImportName, codeImportCode, message, invalidateStrategies])
+  }, [codeImportCode, message])
+
+  const handleCodeImport = useCallback(async () => {
+    if (!codeImportName.trim()) {
+      message.warning('请输入策略名称')
+      return
+    }
+    if (!codeImportResult?.valid) {
+      message.warning('请先验证代码，确保编译通过后再导入')
+      return
+    }
+    setCodeImportValidating(true)
+    try {
+      await createStrategy({
+        name: codeImportName.trim(),
+        language: 'java',
+        code: codeImportCode.trim(),
+      })
+      message.success('代码导入成功，策略已创建')
+      setCodeImportModalOpen(false)
+      setCodeImportName('')
+      setCodeImportCode('')
+      setCodeImportResult(null)
+      onStrategyChanged?.()
+      invalidateStrategies()
+    } catch {
+      message.error('导入失败')
+    } finally {
+      setCodeImportValidating(false)
+    }
+  }, [codeImportName, codeImportCode, codeImportResult, message, invalidateStrategies])
 
   const handleRename = useCallback(async (id: number) => {
     const s = strategyList.find((s) => s.id === id)
@@ -597,11 +614,49 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     let renameValue = ''
     Modal.confirm({
       title: '重命名策略',
+      width: s.description ? 520 : 416,
       content: (
-        <Input
-          defaultValue={s.name}
-          onChange={(e) => { renameValue = e.target.value }}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input
+            defaultValue={s.name}
+            onChange={(e) => { renameValue = e.target.value }}
+          />
+          {s.description && (
+            <div style={{ marginTop: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary, #666)' }}>AI生成描述</span>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  style={{ padding: 0, height: 'auto', fontSize: 12 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(s.description!)
+                    message.success('描述已复制到剪贴板')
+                  }}
+                >
+                  复制
+                </Button>
+              </div>
+              <div style={{
+                background: 'var(--bg-secondary, #f5f5f5)',
+                border: '1px solid var(--border-color, #e8e8e8)',
+                borderRadius: 6,
+                padding: '8px 12px',
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: 'var(--text-secondary, #666)',
+                whiteSpace: 'pre-wrap',
+                maxHeight: 120,
+                overflowY: 'auto',
+                userSelect: 'text',
+              }}>
+                {s.description}
+              </div>
+            </div>
+          )}
+        </div>
+>>>>>>> c026187 (feat: 多项功能优化)
       ),
       okText: '确定',
       cancelText: '取消',
@@ -1317,7 +1372,10 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
             setCodeImportCode('')
             setCodeImportResult(null)
           }}>取消</Button>,
-          <Button key="import" type="primary" icon={<ImportOutlined />} onClick={handleCodeImport} loading={codeImportValidating} disabled={!codeImportName.trim() || !codeImportCode.trim()}>
+          <Button key="validate" icon={<CheckCircleOutlined />} onClick={handleCodeValidate} loading={codeImportValidating} disabled={!codeImportCode.trim()}>
+            验证代码
+          </Button>,
+          <Button key="import" type="primary" icon={<ImportOutlined />} onClick={handleCodeImport} disabled={!codeImportName.trim() || !codeImportResult?.valid}>
             确认导入
           </Button>,
         ]}

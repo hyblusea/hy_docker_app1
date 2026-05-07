@@ -24,6 +24,9 @@ public class Strategy {
     @Column(columnDefinition = "TEXT")
     private String code;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean valid = true;
 

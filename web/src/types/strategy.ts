@@ -3,6 +3,7 @@ export interface Strategy {
   name: string
   language: string
   code: string
+  description?: string
   valid?: boolean
   compile_error?: string
   created_by?: string

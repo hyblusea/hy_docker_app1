@@ -33,6 +33,27 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
   const [result, setResult] = useState<BacktestResult | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return
+    e.preventDefault()
+    const modal = (e.currentTarget as HTMLElement).closest('.ant-modal') as HTMLElement
+    if (!modal) return
+    const rect = modal.getBoundingClientRect()
+    const offsetX = e.clientX - rect.left
+    const offsetY = e.clientY - rect.top
+    const onMove = (ev: MouseEvent) => {
+      modal.style.margin = '0'
+      modal.style.left = `${ev.clientX - offsetX}px`
+      modal.style.top = `${ev.clientY - offsetY}px`
+    }
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [])
+
   useEffect(() => {
     setResult(null)
     setSelectedStrategyId(undefined)
@@ -202,7 +223,7 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
 
       <Modal
         title={
-          <div className={styles.modalTitle}>
+          <div className={styles.modalTitle} onMouseDown={handleDragStart} style={{ cursor: 'move' }}>
             <span>交易明细 {strategyName}</span>
             <Button
               icon={<FileExcelOutlined />}
@@ -218,6 +239,7 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
         footer={null}
         width={1020}
         styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column', maxHeight: '60vh' } }}
+        modalRender={(modal) => modal}
       >
         <div className={styles.detailHeader}>
           <span>序号</span>

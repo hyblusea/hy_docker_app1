@@ -54,9 +54,23 @@ const tradingTheme = EditorView.baseTheme({
   '.cm-scroller': {
     overflow: 'auto',
   },
+  '.cm-content': {
+    minHeight: '100%',
+  },
   '.cm-gutters': {
     backgroundColor: '#1e1e1e',
     borderRight: '1px solid #333',
+  },
+  '.cm-foldGutter': {
+    width: '16px',
+  },
+  '.cm-foldGutter .cm-gutterElement': {
+    cursor: 'pointer',
+    color: '#636d83',
+    textAlign: 'center',
+  },
+  '.cm-foldGutter .cm-gutterElement:hover': {
+    color: '#c8c8c8',
   },
   '&dark .cm-activeLineGutter': {
     backgroundColor: '#2a2d2e',
@@ -84,7 +98,7 @@ export default function JavaEditor({ value, onChange, height = '100%', readOnly 
   ], [readOnly])
 
   return (
-    <div style={{ height, overflow: 'hidden' }}>
+    <div style={{ height, display: 'flex', flexDirection: 'column' }}>
       <CodeMirror
         value={value}
         height="100%"
@@ -96,7 +110,7 @@ export default function JavaEditor({ value, onChange, height = '100%', readOnly 
           lineNumbers: true,
           highlightActiveLineGutter: true,
           highlightActiveLine: true,
-          foldGutter: false,
+          foldGutter: true,
           bracketMatching: true,
           closeBrackets: true,
           autocompletion: false,

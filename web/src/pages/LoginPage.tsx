@@ -197,6 +197,7 @@ const LoginPage = () => {
           </div>
         )}
       </div>
+      <div className={styles.version}>v0.0.1</div>
     </div>
   )
 }

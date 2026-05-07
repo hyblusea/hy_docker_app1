@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
 import { Select, Button, Modal, App } from 'antd'
 import { RightOutlined, PlayCircleOutlined, ClearOutlined, UnorderedListOutlined, FileExcelOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
@@ -20,7 +21,7 @@ interface TradeRecord {
 }
 
 const formatMoney = (v: number) => {
-  if (Math.abs(v) >= 10000) return (v / 10000).toFixed(2) + '万'
+  if (Math.abs(v) >= 10000) return (v / 10000).toFixed(2) + '涓?
   return v.toFixed(2)
 }
 
@@ -33,7 +34,7 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
   const [result, setResult] = useState<BacktestResult | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
+  const handleDragStart = useCallback((e: ReactMouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return
     e.preventDefault()
     const modal = (e.currentTarget as HTMLElement).closest('.ant-modal') as HTMLElement
@@ -62,11 +63,11 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
 
   const handleRun = useCallback(async () => {
     if (!selectedStrategyId) {
-      message.warning('请先选择一个策略')
+      message.warning('璇峰厛閫夋嫨涓€涓瓥鐣?)
       return
     }
     if (quotes.length === 0) {
-      message.warning('请先查询股票数据')
+      message.warning('璇峰厛鏌ヨ鑲＄エ鏁版嵁')
       return
     }
     setLoading(true)
@@ -74,9 +75,9 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
       const res = await runBacktest(selectedStrategyId, quotes)
       setResult(res)
       onSignals(res.signals)
-      message.success('回测完成')
+      message.success('鍥炴祴瀹屾垚')
     } catch (err) {
-      message.error('回测失败: ' + (err as Error).message)
+      message.error('鍥炴祴澶辫触: ' + (err as Error).message)
     } finally {
       setLoading(false)
     }
@@ -118,42 +119,42 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
 
   const handleExportExcel = useCallback(() => {
     if (trades.length === 0) {
-      message.warning('没有交易记录可导出')
+      message.warning('娌℃湁浜ゆ槗璁板綍鍙鍑?)
       return
     }
     const rows: Record<string, string | number>[] = trades.map((t, i) => ({
-      序号: i + 1,
-      买入日期: formatTradeDate(t.entry.trade_date),
-      买入价: t.entry.price.toFixed(2),
-      买入股数: t.entry.shares,
-      买入总金额: t.entry.buyAmount.toFixed(2),
-      买入手续费: t.entry.fees.toFixed(2),
-      卖出日期: t.exit ? formatTradeDate(t.exit.trade_date) : '-',
-      卖出价: t.exit ? t.exit.price.toFixed(2) : '-',
-      卖出手续费: t.exit ? t.exit.sellFees.toFixed(2) : '-',
-      盈亏金额: t.exit ? (t.exit.profit >= 0 ? '+' : '') + (t.exit.profit / 10000).toFixed(2) + '万' : '-',
-      收益率: t.exit ? (t.exit.profitPct >= 0 ? '+' : '') + t.exit.profitPct.toFixed(2) + '%' : '-',
-      剩余金额: formatMoney(t.exit ? t.exit.remainingCash : t.entry.remainingCash),
+      搴忓彿: i + 1,
+      涔板叆鏃ユ湡: formatTradeDate(t.entry.trade_date),
+      涔板叆浠? t.entry.price.toFixed(2),
+      涔板叆鑲℃暟: t.entry.shares,
+      涔板叆鎬婚噾棰? t.entry.buyAmount.toFixed(2),
+      涔板叆鎵嬬画璐? t.entry.fees.toFixed(2),
+      鍗栧嚭鏃ユ湡: t.exit ? formatTradeDate(t.exit.trade_date) : '-',
+      鍗栧嚭浠? t.exit ? t.exit.price.toFixed(2) : '-',
+      鍗栧嚭鎵嬬画璐? t.exit ? t.exit.sellFees.toFixed(2) : '-',
+      鐩堜簭閲戦: t.exit ? (t.exit.profit >= 0 ? '+' : '') + (t.exit.profit / 10000).toFixed(2) + '涓? : '-',
+      鏀剁泭鐜? t.exit ? (t.exit.profitPct >= 0 ? '+' : '') + t.exit.profitPct.toFixed(2) + '%' : '-',
+      鍓╀綑閲戦: formatMoney(t.exit ? t.exit.remainingCash : t.entry.remainingCash),
     }))
     rows.push({
-      序号: '',
-      买入日期: '小计',
-      买入价: '',
-      买入股数: '',
-      买入总金额: '',
-      买入手续费: '',
-      卖出日期: '',
-      卖出价: '',
-      卖出手续费: '',
-      盈亏金额: (subtotalPl >= 0 ? '+' : '') + (subtotalPl / 10000).toFixed(2) + '万',
-      收益率: (subtotalProfitPct >= 0 ? '+' : '') + subtotalProfitPct.toFixed(2) + '%',
-      剩余金额: '',
+      搴忓彿: '',
+      涔板叆鏃ユ湡: '灏忚',
+      涔板叆浠? '',
+      涔板叆鑲℃暟: '',
+      涔板叆鎬婚噾棰? '',
+      涔板叆鎵嬬画璐? '',
+      鍗栧嚭鏃ユ湡: '',
+      鍗栧嚭浠? '',
+      鍗栧嚭鎵嬬画璐? '',
+      鐩堜簭閲戦: (subtotalPl >= 0 ? '+' : '') + (subtotalPl / 10000).toFixed(2) + '涓?,
+      鏀剁泭鐜? (subtotalProfitPct >= 0 ? '+' : '') + subtotalProfitPct.toFixed(2) + '%',
+      鍓╀綑閲戦: '',
     })
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '交易明细')
-    XLSX.writeFile(wb, `交易明细_${new Date().toISOString().slice(0, 10)}.xlsx`)
-    message.success('导出成功')
+    XLSX.utils.book_append_sheet(wb, ws, '浜ゆ槗鏄庣粏')
+    XLSX.writeFile(wb, `浜ゆ槗鏄庣粏_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    message.success('瀵煎嚭鎴愬姛')
   }, [trades, subtotalPl, message])
 
   return (
@@ -161,18 +162,16 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
       <div className={styles.header} onClick={() => setExpanded(!expanded)}>
         <div className={styles.headerTitle}>
           <RightOutlined className={expanded ? styles.headerIconOpen : styles.headerIcon} />
-          <span>策略回测</span>
+          <span>绛栫暐鍥炴祴</span>
         </div>
         {result && (
           <span className={styles.headerSummary}>
-            [{strategyName}]  收益率: <span className={result.totalReturn >= 0 ? styles.valUp : styles.valDown}>
+            [{strategyName}]  鏀剁泭鐜? <span className={result.totalReturn >= 0 ? styles.valUp : styles.valDown}>
               {result.totalReturn >= 0 ? '+' : ''}{result.totalReturn.toFixed(2)}%
             </span>
-            {', '}收益: <span className={result.profitLoss >= 0 ? styles.valUp : styles.valDown}>
-              {result.profitLoss >= 0 ? '+' : ''}{formatMoney(result.profitLoss)}元
-            </span>
-            {', '}交易: {result.tradeCount}次
-            {result.openPositionCount > 0 && <span style={{ color: '#faad14' }}> (+{result.openPositionCount}持仓中)</span>}
+            {', '}鏀剁泭: <span className={result.profitLoss >= 0 ? styles.valUp : styles.valDown}>
+              {result.profitLoss >= 0 ? '+' : ''}{formatMoney(result.profitLoss)}鍏?            </span>
+            {', '}浜ゆ槗: {result.tradeCount}娆?            {result.openPositionCount > 0 && <span style={{ color: '#faad14' }}> (+{result.openPositionCount}鎸佷粨涓?</span>}
           </span>
         )}
       </div>
@@ -180,10 +179,10 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
       {expanded && (
         <div className={styles.content}>
           <div className={styles.fieldGroup}>
-            <span className={styles.label}>策略</span>
+            <span className={styles.label}>绛栫暐</span>
             <Select
               className={styles.strategySelect}
-              placeholder="选择策略"
+              placeholder="閫夋嫨绛栫暐"
               value={selectedStrategyId}
               onChange={setSelectedStrategyId}
               options={strategies.map((s) => ({ value: s.id, label: s.name }))}
@@ -197,7 +196,7 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
             loading={loading}
             disabled={!selectedStrategyId || quotes.length === 0}
           >
-            运行回测
+            杩愯鍥炴祴
           </Button>
 
           {result && (
@@ -207,14 +206,14 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
                 onClick={() => setDetailOpen(true)}
                 size="small"
               >
-                明细
+                鏄庣粏
               </Button>
               <Button
                 icon={<ClearOutlined />}
                 onClick={handleClear}
                 size="small"
               >
-                清除
+                娓呴櫎
               </Button>
             </div>
           )}
@@ -224,13 +223,13 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
       <Modal
         title={
           <div className={styles.modalTitle} onMouseDown={handleDragStart} style={{ cursor: 'move' }}>
-            <span>交易明细 {strategyName}</span>
+            <span>浜ゆ槗鏄庣粏 {strategyName}</span>
             <Button
               icon={<FileExcelOutlined />}
               size="small"
               onClick={handleExportExcel}
             >
-              导出Excel
+              瀵煎嚭Excel
             </Button>
           </div>
         }
@@ -242,18 +241,18 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
         modalRender={(modal) => modal}
       >
         <div className={styles.detailHeader}>
-          <span>序号</span>
-          <span>买入日期</span>
-          <span>买入价</span>
-          <span>买入股数</span>
-          <span>买入总金额</span>
-          <span>买入手续费</span>
-          <span>卖出日期</span>
-          <span>卖出价</span>
-          <span>卖出手续费</span>
-          <span>盈亏金额</span>
-          <span>收益率</span>
-          <span>剩余金额</span>
+          <span>搴忓彿</span>
+          <span>涔板叆鏃ユ湡</span>
+          <span>涔板叆浠?/span>
+          <span>涔板叆鑲℃暟</span>
+          <span>涔板叆鎬婚噾棰?/span>
+          <span>涔板叆鎵嬬画璐?/span>
+          <span>鍗栧嚭鏃ユ湡</span>
+          <span>鍗栧嚭浠?/span>
+          <span>鍗栧嚭鎵嬬画璐?/span>
+          <span>鐩堜簭閲戦</span>
+          <span>鏀剁泭鐜?/span>
+          <span>鍓╀綑閲戦</span>
         </div>
         <div className={styles.detailBody}>
           {trades.map((t, i) => (
@@ -270,10 +269,9 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
               <span>
                 {t.exit ? (
                   <span className={t.exit.profit >= 0 ? styles.valUp : styles.valDown}>
-                    {t.exit.profit >= 0 ? '+' : ''}{(t.exit.profit / 10000).toFixed(2)}万
-                  </span>
+                    {t.exit.profit >= 0 ? '+' : ''}{(t.exit.profit / 10000).toFixed(2)}涓?                  </span>
                 ) : (
-                  <span className={styles.holdTag}>持仓中</span>
+                  <span className={styles.holdTag}>鎸佷粨涓?/span>
                 )}
               </span>
               <span>
@@ -282,20 +280,20 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
                     {t.exit.profitPct >= 0 ? '+' : ''}{t.exit.profitPct.toFixed(2)}%
                   </span>
                 ) : (
-                  <span className={styles.holdTag}>持仓中</span>
+                  <span className={styles.holdTag}>鎸佷粨涓?/span>
                 )}
               </span>
               <span>{formatMoney(t.exit ? t.exit.remainingCash : t.entry.remainingCash)}</span>
             </div>
           ))}
           {trades.length === 0 && (
-            <div className={styles.detailEmpty}>无交易记录</div>
+            <div className={styles.detailEmpty}>鏃犱氦鏄撹褰?/div>
           )}
         </div>
         {trades.length > 0 && (
           <div className={styles.detailSubtotal}>
             <span></span>
-            <span>小计</span>
+            <span>灏忚</span>
             <span></span>
             <span></span>
             <span></span>
@@ -304,8 +302,7 @@ const BacktestPanel = ({ quotes, resetKey, onSignals, onClearSignals }: Backtest
             <span></span>
             <span></span>
             <span className={subtotalPl >= 0 ? styles.valUp : styles.valDown}>
-              {subtotalPl >= 0 ? '+' : ''}{(subtotalPl / 10000).toFixed(2)}万
-            </span>
+              {subtotalPl >= 0 ? '+' : ''}{(subtotalPl / 10000).toFixed(2)}涓?            </span>
             <span className={subtotalProfitPct >= 0 ? styles.valUp : styles.valDown}>
               {subtotalProfitPct >= 0 ? '+' : ''}{subtotalProfitPct.toFixed(2)}%
             </span>

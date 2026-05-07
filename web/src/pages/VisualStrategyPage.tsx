@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Button, Input, InputNumber, Select, Radio, App, Modal, Empty, Tooltip, Spin } from 'antd'
 import { PlusOutlined, DeleteOutlined, SaveOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, SwapOutlined, ThunderboltOutlined, BulbOutlined, ImportOutlined, LoadingOutlined, CopyOutlined } from '@ant-design/icons'
@@ -758,7 +758,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
     )
   }
 
-  const renderRuleNode = (node: RuleNode, section: 'entry' | 'exit', path: RulePath): React.ReactNode => {
+  const renderRuleNode = (node: RuleNode, section: 'entry' | 'exit', path: RulePath): ReactNode => {
     if (node.kind === 'leaf') {
       return renderLeafCard(node, section, path)
     }
@@ -1436,7 +1436,7 @@ const VisualStrategyPage = ({ onStrategyChanged }: VisualStrategyPageProps) => {
   )
 }
 
-function Dropdown({ overlay, children }: { overlay: React.ReactNode; children: React.ReactNode }) {
+function Dropdown({ overlay, children }: { overlay: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<DOMRect | null>(null)
   const [dropUp, setDropUp] = useState(false)

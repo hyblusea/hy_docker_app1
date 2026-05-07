@@ -47,13 +47,22 @@ const tradingCompletions = (context: any) => {
   }
 }
 
+const editorContainerStyle = EditorView.baseTheme({
+  '&': {
+    height: '100%',
+  },
+  '.cm-scroller': {
+    overflow: 'auto !important',
+  },
+})
+
 const tradingTheme = EditorView.baseTheme({
   '&': {
     fontSize: '13px',
     height: '100%',
   },
   '.cm-scroller': {
-    overflow: 'auto',
+    overflow: 'auto !important',
   },
   '.cm-content': {
     minHeight: '100%',
@@ -93,35 +102,35 @@ export default function JavaEditor({ value, onChange, height, readOnly = false, 
   const extensions = useMemo(() => [
     java(),
     autocompletion({ override: [tradingCompletions] }),
+    editorContainerStyle,
     tradingTheme,
     EditorView.lineWrapping,
     ...(readOnly ? [EditorView.editable.of(false), EditorState.readOnly.of(true)] : []),
   ], [readOnly])
 
-  const wrapperStyle: CSSProperties = height
-    ? { height, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
-    : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+  const cmStyle: CSSProperties = height
+    ? { height, minHeight: 0, overflow: 'hidden' }
+    : { flex: 1, minHeight: 0, overflow: 'hidden' }
 
   return (
-    <div style={wrapperStyle}>
-      <CodeMirror
-        value={value}
-        height="100%"
-        theme={oneDark}
-        extensions={extensions}
-        onChange={onChange}
-        className={className}
-        basicSetup={{
-          lineNumbers: true,
-          highlightActiveLineGutter: true,
-          highlightActiveLine: true,
-          foldGutter: true,
-          bracketMatching: true,
-          closeBrackets: true,
-          autocompletion: false,
-          indentOnInput: true,
-        }}
-      />
-    </div>
+    <CodeMirror
+      value={value}
+      height="100%"
+      theme={oneDark}
+      extensions={extensions}
+      onChange={onChange}
+      className={className}
+      style={cmStyle}
+      basicSetup={{
+        lineNumbers: true,
+        highlightActiveLineGutter: true,
+        highlightActiveLine: true,
+        foldGutter: true,
+        bracketMatching: true,
+        closeBrackets: true,
+        autocompletion: false,
+        indentOnInput: true,
+      }}
+    />
   )
 }

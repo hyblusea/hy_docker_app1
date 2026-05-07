@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { java } from '@codemirror/lang-java'
 import { oneDark } from '@codemirror/theme-one-dark'
@@ -97,7 +98,7 @@ export default function JavaEditor({ value, onChange, height, readOnly = false, 
     ...(readOnly ? [EditorView.editable.of(false), EditorState.readOnly.of(true)] : []),
   ], [readOnly])
 
-  const wrapperStyle: React.CSSProperties = height
+  const wrapperStyle: CSSProperties = height
     ? { height, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
     : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
 

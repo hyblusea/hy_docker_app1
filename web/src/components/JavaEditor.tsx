@@ -51,8 +51,14 @@ const editorContainerStyle = EditorView.baseTheme({
   '&': {
     height: '100%',
   },
+  '.cm-editor': {
+    flex: '1',
+  },
   '.cm-scroller': {
     overflow: 'auto !important',
+  },
+  '.cm-content': {
+    minHeight: '100%',
   },
 })
 
@@ -109,7 +115,7 @@ export default function JavaEditor({ value, onChange, height, readOnly = false, 
   ], [readOnly])
 
   const cmStyle: CSSProperties = height
-    ? { height, minHeight: 0, overflow: 'hidden' }
+    ? { height, overflow: 'hidden' }
     : { flex: 1, minHeight: 0, overflow: 'hidden' }
 
   return (

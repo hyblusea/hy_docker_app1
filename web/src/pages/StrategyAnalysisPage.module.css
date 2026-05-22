@@ -1,0 +1,205 @@
+.page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.configCard {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.configSection {
+  margin-bottom: 16px;
+}
+
+.configSection:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.strategyList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px;
+}
+
+.strategyItem {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  min-width: 0;
+  font-size: 12px;
+}
+
+.strategyItem:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-hover);
+}
+
+.strategyItem :global(.ant-checkbox-wrapper) {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.strategyItem :global(.ant-checkbox-wrapper span:last-child) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.progressInline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+.progressStock {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressCard {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.progressInfo {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+  color: var(--text-secondary, #666);
+  font-size: 13px;
+}
+
+.results {
+  margin-top: 16px;
+}
+
+.statsRow {
+  margin-bottom: 2px;
+}
+
+.statItem {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 12px;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: #999;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.historyItem:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-hover);
+}
+
+.historyItemLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.historyItemDate {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.historyItemRange {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.historyItemRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.historyItemMatch {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.chartModalContent {
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+}

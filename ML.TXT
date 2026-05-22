@@ -1,0 +1,1197 @@
+
+存量系统新增K线预测模块
+项目基础: 已有 Spring Boot 3 + JPA 项目，数据库已存储日K线数据
+技术栈: Java 21 + Spring Boot 4.0.6 + Python 3.12 + PyTorch 2.4 + DJL 0.30.0 + React AntD 5
+数据库: MySQL
+模型存储: TorchScript (.pt) + 配置文件
+模型架构: 特征工程(技术指标+小波分解) + 轻量Transformer Encoder + 股票/行业Embedding
+
+目录
+一、核心架构设计
+二、项目结构
+三、Maven 依赖
+四、Python 环境依赖
+五、数据库表设计
+六、模块详细规格
+七、REST API 设计
+八、前端 UI 设计
+九、ECharts 图表配置
+十、开发阶段规划
+十一、关键约束备忘
+十二、模型目录结构
+十三、风险提示与调试指南
+
+一、核心架构设计
+
+[核心设计理念]
+- 前后端分离：特征工程在 Java（复用现有业务逻辑），模型训练在 Python（生态完善），推理在 Java（性能+部署简单）
+- 现代架构：用 Transformer Encoder 替换 LSTM，获得更好的长序列建模能力
+- 可持续迭代：模块化设计，模型架构可独立演进
+- 领域知识注入：保留技术指标+小波分解的特征工程，这是差异化优势
+
+[架构流程图]
+数据准备(K线清洗) → 特征工程(技术指标+小波因果分解) → Python训练(Transformer+Embedding) → TorchScript导出 → Java加载推理 → 信号生成 → 回测
+
+[模型输入输出]
+输入维度:
+  - 时序特征: [batch, lookback, 34]  (技术指标15维 + 小波特征11维 + OHLCV归一化8维)
+  - 股票ID: [batch, 1]
+  - 行业ID: [batch, 1]
+
+输出维度:
+  - close变化率: [batch, forecast_len]
+  - high变化率:  [batch, forecast_len]
+  - low变化率:   [batch, forecast_len]
+  - 方向置信度: [batch, forecast_len, 3]  (涨/平/跌)
+
+[超参数]
+lookback: 60
+forecast_len: 5
+d_model: 128
+nhead: 4
+num_layers: 3
+dim_feedforward: 512
+dropout: 0.1
+stock_emb_dim: 32
+sector_emb_dim: 16
+learning_rate: 0.0005
+batch_size: 64
+max_epochs: 100
+early_stop_patience: 15
+
+二、项目结构
+
+hy_docker_app1-main/
+├── backend/
+│   ├── src/main/java/com/tradingx/
+│   │   ├── model/
+│   │   │   ├── prediction/
+│   │   │   │   ├── ModelVersionEntity.java
+│   │   │   │   ├── TrainingTaskEntity.java
+│   │   │   │   ├── PredictionEntity.java
+│   │   │   │   ├── BacktestEntity.java
+│   │   │   │   └── TradeSignalEntity.java
+│   │   ├── repository/
+│   │   │   └── prediction/
+│   │   │       ├── ModelVersionRepository.java
+│   │   │       ├── TrainingTaskRepository.java
+│   │   │       ├── PredictionRepository.java
+│   │   │       ├── BacktestRepository.java
+│   │   │       └── TradeSignalRepository.java
+│   │   ├── service/
+│   │   │   ├── wavelet/
+│   │   │   │   └── WaveletDenoiser.java  (已有，需更新)
+│   │   │   ├── prediction/
+│   │   │   │   ├── data/
+│   │   │   │   │   ├── KlineData.java
+│   │   │   │   │   └── DataPrepareService.java
+│   │   │   │   ├── feature/
+│   │   │   │   │   ├── TechnicalIndicatorService.java
+│   │   │   │   │   ├── WaveletFeatureService.java
+│   │   │   │   │   ├── FeatureEngineeringService.java
+│   │   │   │   │   └── Normalizer.java
+│   │   │   │   ├── embedding/
+│   │   │   │   │   └── StockEmbeddingService.java
+│   │   │   │   ├── inference/
+│   │   │   │   │   ├── TorchScriptModel.java
+│   │   │   │   │   └── InferenceService.java
+│   │   │   │   ├── signal/
+│   │   │   │   │   ├── SignalGeneratorService.java
+│   │   │   │   │   ├── PositionService.java
+│   │   │   │   │   └── RiskControlService.java
+│   │   │   │   ├── backtest/
+│   │   │   │   │   ├── BacktestEngineService.java
+│   │   │   │   │   └── PerformanceService.java
+│   │   │   │   └── persistence/
+│   │   │   │       ├── SeparatedModelStorage.java
+│   │   │   │       └── ModelPersistenceService.java
+│   │   │   └── training/
+│   │   │       └── TrainingOrchestratorService.java  (触发Python训练)
+│   │   ├── controller/
+│   │   │   └── prediction/
+│   │   │       ├── TrainingController.java
+│   │   │       ├── PredictionController.java
+│   │   │       ├── BacktestController.java
+│   │   │       └── DashboardController.java
+│   │   └── config/
+│   │       └── MLConfig.java
+│   └── src/main/resources/
+├── ml-training/
+│   ├── src/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── data/
+│   │   │   ├── __init__.py
+│   │   │   ├── loader.py
+│   │   │   ├── dataset.py
+│   │   │   └── preprocessing.py
+│   │   ├── model/
+│   │   │   ├── __init__.py
+│   │   │   ├── transformer_predictor.py
+│   │   │   └── positional_encoding.py
+│   │   ├── train/
+│   │   │   ├── __init__.py
+│   │   │   ├── trainer.py
+│   │   │   ├── losses.py
+│   │   │   └── metrics.py
+│   │   ├── export/
+│   │   │   ├── __init__.py
+│   │   │   └── exporter.py
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       └── logger.py
+│   ├── scripts/
+│   │   ├── train.py
+│   │   ├── export.py
+│   │   └── evaluate.py
+│   ├── data/
+│   │   └── features/
+│   ├── models/
+│   │   └── checkpoints/
+│   ├── requirements.txt
+│   └── README.md
+└── ML.TXT
+
+三、Maven 依赖
+
+&lt;properties&gt;
+    &lt;java.version&gt;21&lt;/java.version&gt;
+    &lt;djl.version&gt;0.30.0&lt;/djl.version&gt;
+    &lt;commons-math3.version&gt;3.6.1&lt;/commons-math3.version&gt;
+    &lt;jackson.version&gt;2.21.2&lt;/jackson.version&gt;
+&lt;/properties&gt;
+
+&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;ai.djl&lt;/groupId&gt;
+            &lt;artifactId&gt;bom&lt;/artifactId&gt;
+            &lt;version&gt;${djl.version}&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;dependencies&gt;
+    &lt;!-- Spring Boot Web &amp; JPA --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-starter-validation&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- DJL PyTorch Engine (仅用于推理加载TorchScript) --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;ai.djl&lt;/groupId&gt;
+        &lt;artifactId&gt;api&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;ai.djl.pytorch&lt;/groupId&gt;
+        &lt;artifactId&gt;pytorch-engine&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;ai.djl.pytorch&lt;/groupId&gt;
+        &lt;artifactId&gt;pytorch-native-cpu-precxx11&lt;/artifactId&gt;
+        &lt;classifier&gt;win-x86_64&lt;/classifier&gt;
+        &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- 数学计算 --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.apache.commons&lt;/groupId&gt;
+        &lt;artifactId&gt;commons-math3&lt;/artifactId&gt;
+        &lt;version&gt;${commons-math3.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+
+    &lt;!-- JSON处理 --&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;
+        &lt;artifactId&gt;jackson-databind&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;
+
+四、Python 环境依赖
+
+# ml-training/requirements.txt
+torch==2.4.1
+numpy==2.1.2
+pandas==2.2.3
+scikit-learn==1.5.2
+tqdm==4.66.5
+matplotlib==3.9.2
+pymysql==1.1.1
+SQLAlchemy==2.0.35
+python-dotenv==1.0.1
+
+五、数据库表设计
+
+5.1 已有表
+- kline_daily (已有)
+- stock_list (已有)
+
+5.2 新建表
+
+CREATE TABLE ml_model_version (
+    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    model_name           VARCHAR(64)  NOT NULL COMMENT '模型名称',
+    version              VARCHAR(32)  NOT NULL COMMENT '版本号',
+    status               VARCHAR(16)  NOT NULL DEFAULT 'TRAINING'
+                         COMMENT 'TRAINING/READY/DEPRECATED/FAILED',
+    engine_type          VARCHAR(32)  NOT NULL DEFAULT 'TORCHSCRIPT'
+                         COMMENT '引擎类型: TORCHSCRIPT',
+    config_json          TEXT         COMMENT '模型配置JSON',
+    train_stock_count    INT          COMMENT '训练股票数',
+    train_sample_count   BIGINT       COMMENT '训练样本数',
+    train_epochs         INT          COMMENT '实际训练轮数',
+    best_valid_loss      DOUBLE       COMMENT '最佳验证损失',
+    direction_accuracy   DOUBLE       COMMENT '方向准确率',
+    model_dir            VARCHAR(512) COMMENT '模型存储目录',
+    train_start_date     VARCHAR(8)   COMMENT '训练开始日期',
+    train_end_date       VARCHAR(8)   COMMENT '训练结束日期',
+    valid_split_date     VARCHAR(8)   COMMENT '验证分割日期',
+    created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at         DATETIME,
+    UNIQUE KEY uk_model_version (model_name, version),
+    INDEX idx_status (status)
+);
+
+CREATE TABLE ml_training_task (
+    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    model_version_id     BIGINT       NOT NULL,
+    status               VARCHAR(16)  NOT NULL DEFAULT 'PENDING'
+                         COMMENT 'PENDING/RUNNING/COMPLETED/FAILED/CANCELLED',
+    current_epoch        INT          DEFAULT 0,
+    total_epochs         INT,
+    train_loss           DOUBLE,
+    valid_loss           DOUBLE,
+    direction_accuracy   DOUBLE,
+    learning_rate        DOUBLE,
+    best_valid_loss      DOUBLE,
+    best_epoch           INT,
+    progress_pct         DOUBLE       DEFAULT 0,
+    log_text             TEXT,
+    error_message        TEXT,
+    started_at           DATETIME,
+    completed_at         DATETIME,
+    created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (model_version_id) REFERENCES ml_model_version(id),
+    INDEX idx_status (status)
+);
+
+CREATE TABLE ml_prediction (
+    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    model_version_id     BIGINT       NOT NULL,
+    ts_code              VARCHAR(20)  NOT NULL,
+    predict_date         VARCHAR(8)   NOT NULL,
+    current_close        DECIMAL(12,4),
+    pred_close_chg_1     DOUBLE,
+    pred_close_chg_2     DOUBLE,
+    pred_close_chg_3     DOUBLE,
+    pred_close_chg_4     DOUBLE,
+    pred_close_chg_5     DOUBLE,
+    pred_high_chg_1      DOUBLE,
+    pred_high_chg_2      DOUBLE,
+    pred_high_chg_3      DOUBLE,
+    pred_low_chg_1       DOUBLE,
+    pred_low_chg_2       DOUBLE,
+    pred_low_chg_3       DOUBLE,
+    confidence           DOUBLE       COMMENT '综合置信度',
+    confidence_up        DOUBLE       COMMENT '上涨置信度',
+    confidence_flat      DOUBLE       COMMENT '持平置信度',
+    confidence_down      DOUBLE       COMMENT '下跌置信度',
+    signal               VARCHAR(16),
+    signal_reason        VARCHAR(256),
+    created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_pred_model_stock_date (model_version_id, ts_code, predict_date),
+    INDEX idx_pred_date (predict_date),
+    INDEX idx_pred_ts_code (ts_code),
+    FOREIGN KEY (model_version_id) REFERENCES ml_model_version(id)
+);
+
+CREATE TABLE ml_backtest (
+    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    model_version_id     BIGINT       NOT NULL,
+    backtest_name        VARCHAR(128),
+    start_date           VARCHAR(8)   NOT NULL,
+    end_date             VARCHAR(8)   NOT NULL,
+    initial_capital      DECIMAL(16,2),
+    final_capital        DECIMAL(16,2),
+    total_return         DOUBLE,
+    annual_return        DOUBLE,
+    max_drawdown         DOUBLE,
+    sharpe_ratio         DOUBLE,
+    sortino_ratio        DOUBLE,
+    calmar_ratio         DOUBLE,
+    win_rate             DOUBLE,
+    profit_factor        DOUBLE,
+    total_trades         INT,
+    avg_holding_days     DOUBLE,
+    config_json          TEXT,
+    daily_nav_json       TEXT         COMMENT '每日净值序列JSON',
+    trade_log_json       TEXT         COMMENT '交易记录JSON',
+    status               VARCHAR(16) DEFAULT 'RUNNING',
+    created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at         DATETIME,
+    FOREIGN KEY (model_version_id) REFERENCES ml_model_version(id),
+    INDEX idx_backtest_model (model_version_id)
+);
+
+CREATE TABLE ml_trade_signal (
+    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    model_version_id     BIGINT       NOT NULL,
+    ts_code              VARCHAR(20)  NOT NULL,
+    signal_date          VARCHAR(8)   NOT NULL,
+    signal               VARCHAR(16)  NOT NULL COMMENT 'STRONG_BUY/BUY/HOLD/SELL/STRONG_SELL',
+    target_price         DECIMAL(12,4),
+    stop_loss_price      DECIMAL(12,4),
+    position_ratio       DOUBLE,
+    confidence           DOUBLE,
+    reason               VARCHAR(256),
+    created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_signal_model_stock_date (model_version_id, ts_code, signal_date),
+    INDEX idx_signal_date (signal_date),
+    INDEX idx_signal_ts_code (ts_code),
+    FOREIGN KEY (model_version_id) REFERENCES ml_model_version(id)
+);
+
+六、模块详细规格
+
+6.1 数据层
+
+KlineData (POJO):
+public class KlineData {
+    public final String tsCode;
+    public final String[] dates;
+    public final double[] opens;
+    public final double[] highs;
+    public final double[] lows;
+    public final double[] closes;
+    public final double[] volumes;
+    public final double[] amounts;
+    
+    public int length() { return dates.length; }
+    public KlineData subRange(int start, int end) { ... }
+}
+
+DataPrepareService:
+- loadStockData(tsCode, startDate, endDate): KlineData - BigDecimal→double
+- loadAllStocks(startDate, endDate, minDataPoints): Map&lt;String, KlineData&gt; - 过滤数据不足
+- loadLatest(tsCode, count): KlineData - 最新count条
+- exportFeaturesForTraining(featuresMap, outputPath): void - 导出特征供Python训练
+
+数据清洗规则:
+1. close &lt;= 0 或 high &lt; low → 丢弃该条
+2. vol == 0 (停牌) → 标记，连续超过15天则跳过该股票
+3. 单日涨跌幅 &gt; 20% (非新股/复牌) → 该样本不纳入标签计算
+4. 按 tradeDate 升序排列
+
+6.2 特征层
+
+TechnicalIndicatorService:
+所有方法 static，无状态，线程安全。
+返回 double[n][15]
+
+维度列表:
+0: RSI(14) → (RSI-50)/50 → [-1, 1]
+1: MACD DIF → / close
+2: MACD DEA → / close
+3: MACD柱 → / close
+4: KDJ-K → / 100 → [0, 1]
+5: KDJ-D → / 100
+6: KDJ-J → / 100
+7: 布林带位置 → (close - lower) / (upper - lower)
+8: 布林带宽度 → (upper - lower) / middle
+9: ATR(14) → / close
+10: ROC(12) → 直接用
+11: Williams%R → / 100
+12: OBV变化率 → 5日ROC
+13: 量比 → vol / MA20(vol)
+14: 历史波动率(20) → 直接用
+
+WaveletFeatureService:
+⚠️ 强制约束：必须使用因果分解，禁止未来信息泄露
+
+对每个时间点t，仅使用[0, t]范围内的收盘价进行小波分解，
+仅取最后一个点的系数作为该时间步特征。
+
+需要WaveletDenoiser新增方法:
+- getMultiLevelCoeffs(signal, levels): double[][] - [levels+1][n]
+  返回[近似系数, 细节系数Level N, ..., 细节系数Level 1]
+
+因果特征提取:
+extractFeaturesCausal(closes): double[n][11]
+
+维度列表:
+0:  level3近似系数 归一化位置
+1:  level3近似系数 5日动量
+2:  level3能量占比
+3:  level2细节系数 归一化位置
+4:  level2细节系数 5日动量
+5:  level2能量占比
+6:  level1细节系数 归一化位置
+7:  level1细节系数 5日动量
+8:  level1能量占比
+9:  level1-level2滚动相关系数(10日)
+10: 趋势斜率(20日回归斜率/标准差)
+
+要点: 先去噪再分解; 小波系数需线性插值上采样到原长度
+
+FeatureEngineeringService:
+buildFeatureMatrix(klineData): double[n][34]
+
+34维特征组成:
+0-7: OHLCV归一化 (8维)
+  0: (open - close)/close
+  1: (high - close)/close
+  2: (low - close)/close
+  3: close / MA20(close) - 1
+  4: volume / MA20(volume) - 1
+  5: (high - low) / close
+  6: (close - open) / close
+  7: abs(close - pre_close) / close
+
+8-22: 15维技术指标
+
+23-33: 11维小波特征
+
+Normalizer (POJO，非@Service):
+public class Normalizer {
+    private double[] means;
+    private double[] stds;
+    private int featureDim;
+    private boolean fitted = false;
+
+    public void fit(double[][] allSamples): void - 计算均值标准差，跳过NaN
+    public double[][] transform(double[][] data): double[][] - 标准化，NaN→0
+    public double[][] inverseTransform(double[][] normalized): double[][]
+    public void save(Path path): void - 保存为JSON
+    public static Normalizer load(Path path): Normalizer
+}
+
+6.3 Embedding映射层
+
+StockEmbeddingService (@Service):
+职责：维护股票→ID、行业→ID的映射关系（与Python训练时一致）
+
+成员:
+- stockIndexMap: Map&lt;String, Integer&gt; - tsCode→连续ID
+- sectorIndexMap: Map&lt;String, Integer&gt; - sectorName→连续ID
+- stockSectorMap: Map&lt;String, String&gt; - tsCode→sectorName
+- stockCount: int
+- sectorCount: int
+
+方法:
+- init(): void - 从stock_list表加载
+- buildStockIndex(tsCodeList): void - 构建股票索引
+- getStockIndex(tsCode): int
+- getSectorIndex(tsCode): int
+- getEmbeddingIndices(tsCode): int[2] - [stockIdx, sectorIdx]
+- saveMapping(Path path): void - 保存为JSON（供Python训练用）
+- loadMapping(Path path): void
+
+6.4 推理层
+
+TorchScriptModel (封装DJL):
+public class TorchScriptModel implements AutoCloseable {
+    private final Model model;
+    private final Predictor&lt;List&lt;NDList&gt;, NDList&gt; predictor;
+    private final String modelPath;
+
+    public TorchScriptModel(Path modelPath) - 加载.pt文件
+    public PredictionOutput predict(NDArray features, NDArray stockIdx, NDArray sectorIdx)
+    public void close()
+}
+
+PredictionOutput (POJO):
+public class PredictionOutput {
+    public double[] predCloseChanges;  // [forecast_len]
+    public double[] predHighChanges;   // [forecast_len]
+    public double[] predLowChanges;    // [forecast_len]
+    public double[][] confidence;      // [forecast_len][3] - up/flat/down
+}
+
+InferenceService (@Service):
+职责：端到端推理流程
+
+流程:
+1. loadModel(modelVersionId) → TorchScriptModel
+2. loadNormalizer(modelDir) → Normalizer
+3. loadEmbeddingMapping(modelDir) → StockEmbeddingService
+4. loadLatestKline(tsCode, lookback + 20) → KlineData
+5. buildFeatureMatrix → 34维特征
+6. transform → 标准化
+7. getEmbeddingIndices → stockIdx, sectorIdx
+8. model.predict → PredictionOutput
+9. generateSignal → SignalResult
+10. savePrediction → ml_prediction表
+
+6.5 信号生成层
+
+SignalGeneratorService:
+public class SignalResult {
+    public String signal;  // STRONG_BUY/BUY/HOLD/SELL/STRONG_SELL
+    public double targetPrice;
+    public double stopLossPrice;
+    public double positionRatio;
+    public double confidence;
+    public String reason;
+}
+
+generate(predOutput, currentClose, config): SignalResult
+
+规则:
+lookAhead = 3 (默认)
+predChange = predOutput.predCloseChanges[lookAhead - 1]
+confUp = predOutput.confidence[lookAhead - 1][0]
+
+if predChange &gt; 0.03 &amp;&amp; confUp &gt; 0.7:
+    signal = STRONG_BUY
+    positionRatio = min(predChange / 0.03 * 0.15, 0.15)
+elif predChange &gt; 0.02 &amp;&amp; confUp &gt; 0.6:
+    signal = BUY
+    positionRatio = min(predChange / 0.02 * 0.1, 0.1)
+elif predChange &lt; -0.03 &amp;&amp; confUp &lt; 0.3:
+    signal = STRONG_SELL
+elif predChange &lt; -0.02 &amp;&amp; confUp &lt; 0.4:
+    signal = SELL
+else:
+    signal = HOLD
+
+targetPrice = currentClose * (1 + predChange)
+stopLossPrice = currentClose * (1 - config.stopLossRatio)
+
+RiskControlService:
+- 单股仓位 ≤ 20%
+- 总仓位 ≤ 80%
+- 单日亏损触发阈值暂停
+- 最大回撤触发阈值暂停
+- 单行业集中度 ≤ 40%
+
+6.6 回测层
+
+BacktestEngineService:
+逐交易日回测:
+1. 遍历日期
+2. 对每只股票，获取当日特征 → 推理 → 信号
+3. 执行卖出（含跌停检测）
+4. 执行买入（含涨停检测、风控校验）
+5. 更新持仓市值
+6. 记录净值
+7. 更新回撤
+8. 完成后计算绩效 → 保存到ml_backtest表
+
+PerformanceService:
+计算指标:
+- totalReturn(nav): 总收益率
+- annualReturn(nav, days): 年化收益率
+- maxDrawdown(nav): 最大回撤
+- sharpeRatio(nav, riskFree): 夏普比率
+- sortinoRatio(nav, riskFree): 索提诺比率
+- calmarRatio(nav): 卡玛比率
+- winRate(trades): 胜率
+- profitFactor(trades): 盈亏比
+- avgHoldingDays(trades): 平均持仓天数
+
+6.7 训练协调层
+
+TrainingOrchestratorService:
+职责：触发Python训练进程，监控进度
+
+流程:
+1. 创建 ModelVersionEntity 和 TrainingTaskEntity (status=PENDING)
+2. 导出数据:
+   - loadAllStocks → KlineData
+   - buildFeatureMatrix 对每只股票
+   - normalizer.fit → 保存 normalizer.json
+   - stockEmbeddingService.buildStockIndex → 保存 embedding.json
+   - 导出特征到 ml-training/data/features/
+3. 启动Python训练进程 (ProcessBuilder)
+   - 命令: python ml-training/scripts/train.py --config=...
+4. 轮询训练日志或进程状态，更新 TrainingTaskEntity
+5. 训练完成后，将模型文件移动到正式存储目录
+6. 更新 ModelVersionEntity (status=READY)
+
+Python训练模块关键规格见第七部分。
+
+七、Python训练模块详细设计
+
+7.1 项目结构 (ml-training/)
+
+见第二部分。
+
+7.2 模型定义 (src/model/transformer_predictor.py)
+
+import torch
+import torch.nn as nn
+from .positional_encoding import PositionalEncoding
+
+class TransformerPredictor(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        
+        # 输入投影层
+        self.input_proj = nn.Linear(config.feature_dim, config.d_model)
+        
+        # 位置编码
+        self.pos_encoder = PositionalEncoding(config.d_model, config.dropout, config.lookback)
+        
+        # Transformer Encoder
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=config.d_model,
+            nhead=config.nhead,
+            dim_feedforward=config.dim_feedforward,
+            dropout=config.dropout,
+            batch_first=True
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=config.num_layers
+        )
+        
+        # Embedding层
+        self.stock_embedding = nn.Embedding(config.stock_count, config.stock_emb_dim)
+        self.sector_embedding = nn.Embedding(config.sector_count, config.sector_emb_dim)
+        
+        # 融合层
+        fusion_dim = config.d_model + config.stock_emb_dim + config.sector_emb_dim
+        self.fusion = nn.Sequential(
+            nn.Linear(fusion_dim, fusion_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(config.dropout),
+            nn.Linear(fusion_dim // 2, config.d_model)
+        )
+        
+        # 输出头
+        self.price_head = nn.Sequential(
+            nn.Linear(config.d_model, 64),
+            nn.ReLU(),
+            nn.Linear(64, 3 * config.forecast_len)  # close, high, low
+        )
+        
+        self.direction_head = nn.Sequential(
+            nn.Linear(config.d_model, 64),
+            nn.ReLU(),
+            nn.Linear(64, 3 * config.forecast_len)  # up, flat, down 概率
+        )
+        
+    def forward(self, features, stock_idx, sector_idx):
+        # features: [batch, lookback, feature_dim]
+        # stock_idx: [batch, 1]
+        # sector_idx: [batch, 1]
+        
+        # 输入投影 + 位置编码
+        x = self.input_proj(features)  # [batch, lookback, d_model]
+        x = self.pos_encoder(x)
+        
+        # Transformer编码
+        x = self.transformer_encoder(x)  # [batch, lookback, d_model]
+        
+        # 取最后一个时间步
+        x = x[:, -1, :]  # [batch, d_model]
+        
+        # Embedding查表
+        stock_emb = self.stock_embedding(stock_idx.squeeze(1))  # [batch, stock_emb_dim]
+        sector_emb = self.sector_embedding(sector_idx.squeeze(1))  # [batch, sector_emb_dim]
+        
+        # 融合
+        x = torch.cat([x, stock_emb, sector_emb], dim=-1)
+        x = self.fusion(x)  # [batch, d_model]
+        
+        # 输出
+        price_pred = self.price_head(x)  # [batch, 3*forecast_len]
+        price_pred = price_pred.view(-1, 3, self.config.forecast_len)  # [batch, 3, forecast_len]
+        
+        direction_logits = self.direction_head(x)  # [batch, 3*forecast_len]
+        direction_logits = direction_logits.view(-1, 3, self.config.forecast_len)  # [batch, 3, forecast_len]
+        direction_probs = torch.softmax(direction_logits, dim=1)  # [batch, 3, forecast_len]
+        
+        return price_pred, direction_probs
+
+7.3 位置编码 (src/model/positional_encoding.py)
+
+import torch
+import torch.nn as nn
+import math
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+        
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(max_len, 1, d_model)
+        pe[:, 0, 0::2] = torch.sin(position * div_term)
+        pe[:, 0, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+        
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        # x: [batch, seq_len, d_model]
+        x = x + self.pe[:x.size(1)].transpose(0, 1)
+        return self.dropout(x)
+
+7.4 损失函数 (src/train/losses.py)
+
+import torch
+import torch.nn as nn
+
+class CombinedLoss(nn.Module):
+    def __init__(self, price_weight=1.0, direction_weight=0.3):
+        super().__init__()
+        self.price_weight = price_weight
+        self.direction_weight = direction_weight
+        self.mse_loss = nn.MSELoss()
+        self.ce_loss = nn.CrossEntropyLoss()
+        
+    def forward(self, price_pred, direction_probs, price_target, direction_target):
+        # price_pred: [batch, 3, forecast_len]
+        # direction_probs: [batch, 3, forecast_len]
+        # price_target: [batch, 3, forecast_len]
+        # direction_target: [batch, forecast_len] (0=up, 1=flat, 2=down)
+        
+        price_loss = self.mse_loss(price_pred, price_target)
+        
+        direction_loss = 0
+        for t in range(direction_probs.size(2)):
+            direction_loss += self.ce_loss(direction_probs[:, :, t], direction_target[:, t])
+        direction_loss /= direction_probs.size(2)
+        
+        total_loss = self.price_weight * price_loss + self.direction_weight * direction_loss
+        return total_loss, price_loss, direction_loss
+
+7.5 数据集 (src/data/dataset.py)
+
+import torch
+from torch.utils.data import Dataset
+
+class StockDataset(Dataset):
+    def __init__(self, features_dict, labels_dict, stock_indices, sector_indices, config):
+        self.features_dict = features_dict
+        self.labels_dict = labels_dict
+        self.stock_indices = stock_indices
+        self.sector_indices = sector_indices
+        self.config = config
+        self.samples = self._build_samples()
+        
+    def _build_samples(self):
+        samples = []
+        for ts_code, features in self.features_dict.items():
+            n = features.shape[0]
+            stock_idx = self.stock_indices[ts_code]
+            sector_idx = self.sector_indices[ts_code]
+            
+            for i in range(self.config.lookback, n - self.config.forecast_len + 1):
+                feature_window = features[i - self.config.lookback : i]
+                label_window = self.labels_dict[ts_code][i : i + self.config.forecast_len]
+                samples.append((feature_window, stock_idx, sector_idx, label_window))
+        return samples
+        
+    def __len__(self):
+        return len(self.samples)
+        
+    def __getitem__(self, idx):
+        features, stock_idx, sector_idx, label = self.samples[idx]
+        return (
+            torch.tensor(features, dtype=torch.float32),
+            torch.tensor([stock_idx], dtype=torch.long),
+            torch.tensor([sector_idx], dtype=torch.long),
+            torch.tensor(label, dtype=torch.float32)
+        )
+
+7.6 训练器 (src/train/trainer.py)
+
+import torch
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+import os
+from ..model.transformer_predictor import TransformerPredictor
+from .losses import CombinedLoss
+from .metrics import direction_accuracy
+
+class Trainer:
+    def __init__(self, config, train_dataset, valid_dataset):
+        self.config = config
+        self.train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
+        self.valid_loader = DataLoader(valid_dataset, batch_size=config.batch_size, shuffle=False)
+        
+        self.model = TransformerPredictor(config)
+        self.criterion = CombinedLoss(price_weight=1.0, direction_weight=0.3)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=config.learning_rate, weight_decay=1e-5)
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', patience=5, factor=0.5)
+        
+        self.best_valid_loss = float('inf')
+        self.best_epoch = 0
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model.to(self.device)
+        
+    def train_epoch(self):
+        self.model.train()
+        total_loss = 0
+        for features, stock_idx, sector_idx, labels in tqdm(self.train_loader, desc='Training'):
+            features = features.to(self.device)
+            stock_idx = stock_idx.to(self.device)
+            sector_idx = sector_idx.to(self.device)
+            labels = labels.to(self.device)
+            
+            price_target = labels[:, :, :3].permute(0, 2, 1)  # [batch, 3, forecast_len]
+            direction_target = labels[:, :, 3].long()  # [batch, forecast_len]
+            
+            self.optimizer.zero_grad()
+            price_pred, direction_probs = self.model(features, stock_idx, sector_idx)
+            loss, price_loss, dir_loss = self.criterion(price_pred, direction_probs, price_target, direction_target)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+            self.optimizer.step()
+            total_loss += loss.item()
+        return total_loss / len(self.train_loader)
+        
+    def validate(self):
+        self.model.eval()
+        total_loss = 0
+        total_dir_acc = 0
+        with torch.no_grad():
+            for features, stock_idx, sector_idx, labels in self.valid_loader:
+                features = features.to(self.device)
+                stock_idx = stock_idx.to(self.device)
+                sector_idx = sector_idx.to(self.device)
+                labels = labels.to(self.device)
+                
+                price_target = labels[:, :, :3].permute(0, 2, 1)
+                direction_target = labels[:, :, 3].long()
+                
+                price_pred, direction_probs = self.model(features, stock_idx, sector_idx)
+                loss, _, _ = self.criterion(price_pred, direction_probs, price_target, direction_target)
+                dir_acc = direction_accuracy(direction_probs, direction_target)
+                
+                total_loss += loss.item()
+                total_dir_acc += dir_acc
+        return total_loss / len(self.valid_loader), total_dir_acc / len(self.valid_loader)
+        
+    def train(self, num_epochs, checkpoint_dir):
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        for epoch in range(num_epochs):
+            train_loss = self.train_epoch()
+            valid_loss, valid_dir_acc = self.validate()
+            
+            self.scheduler.step(valid_loss)
+            
+            if valid_loss &lt; self.best_valid_loss:
+                self.best_valid_loss = valid_loss
+                self.best_epoch = epoch
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'valid_loss': valid_loss,
+                    'dir_acc': valid_dir_acc
+                }, os.path.join(checkpoint_dir, 'best_model.pth'))
+                
+            print(f'Epoch {epoch+1}: train_loss={train_loss:.4f}, valid_loss={valid_loss:.4f}, dir_acc={valid_dir_acc:.4f}')
+            
+            if epoch - self.best_epoch &gt;= self.config.early_stop_patience:
+                print(f'Early stopping at epoch {epoch+1}')
+                break
+                
+    def load_best_model(self, checkpoint_dir):
+        checkpoint = torch.load(os.path.join(checkpoint_dir, 'best_model.pth'))
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        return self.model
+
+7.7 导出器 (src/export/exporter.py)
+
+import torch
+import os
+
+def export_to_torchscript(model, config, output_path):
+    model.eval()
+    dummy_features = torch.randn(1, config.lookback, config.feature_dim)
+    dummy_stock_idx = torch.randint(0, config.stock_count, (1, 1))
+    dummy_sector_idx = torch.randint(0, config.sector_count, (1, 1))
+    
+    scripted_model = torch.jit.trace(model, (dummy_features, dummy_stock_idx, dummy_sector_idx))
+    scripted_model.save(output_path)
+    print(f'Model exported to {output_path}')
+
+八、REST API 设计
+
+8.1 训练管理 /api/prediction/training
+
+POST /start
+启动模型训练
+权限: ADMIN
+Body: {
+  "modelName": "kline_transformer_v1",
+  "version": "1.0.0",
+  "trainStartDate": "20190101",
+  "trainEndDate": "20250501",
+  "validSplitDate": "20240101"
+}
+Response: { "taskId": 123, "modelVersionId": 456 }
+
+POST /cancel/{taskId}
+取消训练
+权限: ADMIN
+
+GET /status/{taskId}
+获取训练状态
+Response: {
+  "status": "RUNNING",
+  "currentEpoch": 45,
+  "totalEpochs": 100,
+  "trainLoss": 0.0123,
+  "validLoss": 0.0145,
+  "directionAccuracy": 0.543,
+  "progressPct": 45.0,
+  "logText": "..."
+}
+
+GET /models
+获取模型版本列表
+Response: [{
+  "id": 1,
+  "modelName": "kline_transformer_v1",
+  "version": "1.0.0",
+  "status": "READY",
+  "directionAccuracy": 0.543,
+  "createdAt": "2026-05-20T10:00:00"
+}]
+
+8.2 预测 /api/prediction/prediction
+
+POST /run
+批量运行预测
+Body: {
+  "modelVersionId": 1,
+  "tsCodes": ["000001.SZ", "000002.SZ"],
+  "predictDate": "20260520"
+}
+Response: { "predictionIds": [123, 456] }
+
+GET /latest
+获取某只股票最新预测
+Query: tsCode=000001.SZ
+Response: { ... }
+
+GET /signals
+获取某日全部信号
+Query: date=20260520, modelVersionId=1
+
+GET /history
+获取预测vs实际历史
+Query: tsCode=000001.SZ, days=30
+
+8.3 回测 /api/prediction/backtest
+
+POST /run
+启动回测
+Body: {
+  "modelVersionId": 1,
+  "backtestName": "回测2024",
+  "startDate": "20240101",
+  "endDate": "20250501",
+  "initialCapital": 1000000,
+  "config": { ... }
+}
+Response: { "backtestId": 123 }
+
+GET /results
+获取回测结果列表
+
+GET /result/{id}
+获取单个回测详情
+
+8.4 仪表盘 /api/prediction/dashboard
+
+GET /overview
+获取概览数据
+Response: {
+  "currentModel": { ... },
+  "todaySignals": { "strongBuy": 5, "buy": 20, ... },
+  "latestBacktest": { ... },
+  "trainingStatus": { ... }
+}
+
+GET /stock/{tsCode}
+获取单只股票详情
+
+九、前端 UI 设计
+
+9.1 技术栈
+
+框架: React 18 + TypeScript
+UI库: Ant Design 5
+图表: ECharts 5
+状态管理: Zustand
+路由: React Router 6
+构建: Vite 5
+
+9.2 导航
+
+[仪表盘] [模型训练] [预测中心] [回测中心] [设置]
+
+9.3 仪表盘 /prediction/dashboard
+
+┌─────────────────────────────────────────────────────────────┐
+│ 当前模型: kline_transformer_v1.0.0 [READY]                  │
+│ 今日信号: 强买5 | 买20 | 持有4500 | 卖15 | 强卖3             │
+│ 最新回测: 年化+28.5% | 夏普1.85 | 最大回撤-12.3%             │
+│ 训练状态: [空闲] 或 [训练中 ████░░░░ 45%]                   │
+├─────────────────────────────────────────────────────────────┤
+│ 净值曲线 (策略 vs 沪深300) ECharts AreaChart                │
+├─────────────────────────────────────────────────────────────┤
+│ 今日信号 Top 10 (表格)                                       │
+│ 股票 | 信号 | 当前价 | 目标价 | 置信度 | 操作                │
+├─────────────────────────────────────────────────────────────┤
+│ 行业信号热力图 (ECharts Heatmap)                             │
+└─────────────────────────────────────────────────────────────┘
+
+9.4 模型训练 /prediction/training
+
+┌─────────────────────────────────────────────────────────────┐
+│ 训练配置                                                    │
+│ 模型名称: [____________]  版本: [1.0.0]                     │
+│ 训练区间: [2019-01-01] 至 [2025-05-01]                      │
+│ 验证分割: [2024-01-01]                                      │
+│ [开始训练] [查看历史模型]                                    │
+├─────────────────────────────────────────────────────────────┤
+│ 训练进度 (如果正在运行)                                      │
+│ Epoch 45/100 [████████░░░░░░] 45%                           │
+│ Train Loss: 0.0123 | Valid Loss: 0.00145 | Dir Acc: 54.3%   │
+├─────────────────────────────────────────────────────────────┤
+│ 历史模型列表                                                │
+│ 名称 | 版本 | 状态 | 方向准确率 | 创建时间 | 操作            │
+└─────────────────────────────────────────────────────────────┘
+
+9.5 预测中心 /prediction/prediction
+
+┌─────────────────────────────────────────────────────────────┐
+│ 筛选: 日期 [2026-05-20] 模型 [v1.0.0] 信号 [全部]           │
+│ [查询] [导出CSV] [运行今日预测]                              │
+├─────────────────────────────────────────────────────────────┤
+│ 信号统计: 强买5 | 买20 | 持有4500 | 卖15 | 强卖3             │
+├─────────────────────────────────────────────────────────────┤
+│ 预测列表 (表格+分页)                                         │
+│ 股票 | 当前价 | 信号 | 预测D1-D3 | 置信度 | 详情            │
+├─────────────────────────────────────────────────────────────┤
+│ 点击详情展开:                                               │
+│   - K线+预测叠加图 (ECharts)                                │
+│   - 技术指标面板                                             │
+│   - 小波分解四子图 (联动缩放)                                │
+│   - 预测vs实际散点图                                         │
+└─────────────────────────────────────────────────────────────┘
+
+9.6 回测中心 /prediction/backtest
+
+┌─────────────────────────────────────────────────────────────┐
+│ 回测配置                                                    │
+│ 模型: [v1.0.0]  区间: [2024-01-01] 至 [2025-05-01]         │
+│ 初始资金: [1000000]                                          │
+│ [运行回测]                                                  │
+├─────────────────────────────────────────────────────────────┤
+│ 绩效卡片                                                    │
+│ 总收益 +45.2% | 年化 +28.5% | 最大回撤 -12.3%               │
+│ 夏普 1.85 | 索提诺 2.43 | 卡玛 2.32 | 胜率 56.7%            │
+├─────────────────────────────────────────────────────────────┤
+│ 净值曲线 (策略 vs 沪深300)                                  │
+├─────────────────────────────────────────────────────────────┤
+│ 月度收益热力图 (ECharts)                                    │
+├─────────────────────────────────────────────────────────────┤
+│ 回撤曲线 (水下面积图)                                        │
+├─────────────────────────────────────────────────────────────┤
+│ 交易记录 (表格+分页)                                         │
+└─────────────────────────────────────────────────────────────┘
+
+十、ECharts 图表配置
+
+见原设计，保持不变。
+
+十一、开发阶段规划
+
+阶段1: 基础设施 (2-3天)
+- 创建目录结构
+- 更新 pom.xml
+- 创建数据库表
+- 创建核心实体类和Repository
+
+阶段2: 特征工程 (3-4天)
+- DataPrepareService
+- 更新 WaveletDenoiser
+- TechnicalIndicatorService
+- WaveletFeatureService
+- FeatureEngineeringService
+- Normalizer
+
+阶段3: Python训练模块 (4-5天)
+- 数据加载和预处理
+- Transformer模型定义
+- 训练循环和评估
+- TorchScript导出
+
+阶段4: 推理层 (2-3天)
+- TorchScriptModel 封装
+- InferenceService
+- SignalGeneratorService
+
+阶段5: 回测层 (3-4天)
+- BacktestEngineService
+- PerformanceService
+
+阶段6: API和UI (5-7天)
+- REST Controller
+- 前端页面和组件
+
+阶段7: 测试和调优 (3-4天)
+- 单元测试
+- 集成测试
+- 回测验证
+
+十二、关键约束备忘
+
+1. 必须使用因果小波分解，禁止未来信息泄露
+2. 特征维度必须固定为34维，与Python训练时一致
+3. Normalizer和Embedding映射必须从训练时保存的文件加载，不能重新计算
+4. 推理时lookback必须与训练时一致(60)
+5. 训练/验证分割必须按日期分割，不能随机分割
+6. 模型导出必须使用TorchScript，确保Java可加载
+7. 必须保留原数据清洗规则
+
+十三、模型目录结构
+
+models/{modelName}/{version}/
+├── config.json          # 模型配置(超参数、维度等)
+├── model.pt             # TorchScript模型文件
+├── normalizer.json      # 标准化参数
+├── embedding.json       # 股票/行业索引映射
+├── metrics.json         # 评估指标
+└── metadata.json        # 元信息(训练时间、股票数等)
+
+十四、风险提示与调试指南
+
+风险1: 小波因果分解计算量大
+  缓解: 预计算并缓存特征；使用增量分解
+
+风险2: PyTorch和DJL版本不兼容
+  缓解: 严格锁定版本号；做集成测试
+
+风险3: 训练时和推理时特征不一致
+  缓解: 统一使用FeatureEngineeringService；单元测试覆盖边界情况
+
+风险4: 过拟合
+  缓解: 使用早停、Dropout、权重衰减；验证集按时间分割
+
+调试技巧:
+1. 先在单只股票上跑通整个流程
+2. 保存中间特征，Python和Java做一致性校验
+3. 用已知的简单模式测试模型是否能学习
+4. 可视化预测结果，定性分析
+

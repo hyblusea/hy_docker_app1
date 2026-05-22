@@ -1,0 +1,71 @@
+TradingX Project Strategy Code Requirements
+============================================
+
+== Required Code Structure ==
+
+Generated strategy code MUST follow this structure:
+
+package com.tradingx.strategy;
+
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.BaseStrategy;
+import org.ta4j.core.Rule;
+import org.ta4j.core.Strategy;
+// ... other ta4j v0.22.6 imports from the API catalog
+
+public class MyStrategy {
+    public static Strategy buildStrategy(BarSeries series) {
+        // Create indicators
+        // Build entry and exit rules
+        // Return strategy
+        return new BaseStrategy("MyStrategy", entryRule, exitRule);
+    }
+}
+
+== Key Requirements ==
+
+1. Package name MUST be: com.tradingx.strategy
+2. Class MUST be public
+3. MUST have a static method: public static Strategy buildStrategy(BarSeries series)
+4. MUST return a BaseStrategy instance: new BaseStrategy("StrategyName", entryRule, exitRule)
+5. ONLY use classes from the ta4j-api-catalog.txt reference - if a class is NOT in the catalog, it does NOT exist in v0.22.6
+6. NEVER use classes from org.ta4j.core.trading package - this package does NOT exist in v0.22.6
+
+== CRITICAL CONSTRAINT: Only Use Classes From The API Catalog ==
+
+The file ta4j-api-catalog.txt contains the COMPLETE list of all classes available in ta4j v0.22.6.
+You MUST ONLY use classes that appear in that catalog.
+If you want to use a class that is NOT in the catalog, it means that class does NOT exist in v0.22.6.
+
+Common non-existent classes and their correct alternatives:
+- KDJIndicator does NOT exist -> use StochasticOscillatorKIndicator + StochasticOscillatorDIndicator
+- MACDSignalIndicator does NOT exist -> use EMAIndicator of MACDIndicator result
+- The package org.ta4j.core.trading does NOT exist -> use org.ta4j.core.rules, org.ta4j.core.num, etc.
+
+== v0.22.6 Package Structure (IMPORTANT) ==
+
+Correct package paths in v0.22.6:
+- org.ta4j.core.num.Num (NOT org.ta4j.core.trading.Num)
+- org.ta4j.core.rules.CrossedUpIndicatorRule (NOT org.ta4j.core.trading.rules.CrossedUpIndicatorRule)
+- org.ta4j.core.rules.CrossedDownIndicatorRule (NOT org.ta4j.core.trading.rules.CrossedDownIndicatorRule)
+- org.ta4j.core.Strategy (NOT org.ta4j.core.trading.Strategy)
+- org.ta4j.core.BaseStrategy (requires name as first parameter)
+- org.ta4j.core.indicators.averages.SMAIndicator (NOT org.ta4j.core.indicators.SMAIndicator)
+- org.ta4j.core.indicators.averages.EMAIndicator (NOT org.ta4j.core.indicators.EMAIndicator)
+- org.ta4j.core.indicators.adx.ADXIndicator (NOT org.ta4j.core.indicators.ADXIndicator)
+- org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator (NOT org.ta4j.core.indicators.BollingerBandsMiddleIndicator)
+- org.ta4j.core.backtest.BarSeriesManager (NOT org.ta4j.core.BarSeriesManager)
+
+== KDJ Implementation ==
+
+Ta4j v0.22.6 does NOT have a KDJIndicator class. KDJ must be implemented using:
+- StochasticOscillatorKIndicator = K line
+- StochasticOscillatorDIndicator = D line
+- J line = 3*K - 2*D (use CombineIndicator if needed)
+
+Example:
+StochasticOscillatorKIndicator k = new StochasticOscillatorKIndicator(series, 9);
+StochasticOscillatorDIndicator d = new StochasticOscillatorDIndicator(k);  // D line is SMA(3) of K by default
+Rule entryRule = new CrossedUpIndicatorRule(k, d);    // golden cross
+Rule exitRule = new CrossedDownIndicatorRule(k, d);   // death cross
+return new BaseStrategy("KDJCrossStrategy", entryRule, exitRule);

@@ -1,0 +1,45 @@
+.panel {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 20px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fieldGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.stockInput {
+  min-width: 220px;
+}
+
+.periodSelect {
+  min-width: 100px;
+}
+
+.datePicker {
+  min-width: 130px;
+}
+
+.searchBtn {
+  min-width: 80px;
+  margin-left: 4px;
+}

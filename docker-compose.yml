@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: .
+    image: ghcr.io/hyblusea/hy_docker_app1:latest
+    container_name: tradingx
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - app-data:/app/data
+
+volumes:
+  app-data:

@@ -1,0 +1,103 @@
+.container {
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.tableWrap {
+  background: #fff;
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.tabs {
+  :global(.ant-tabs-nav) {
+    margin-bottom: 8px;
+  }
+  :global(.ant-tabs-tab) {
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+  :global(.ant-table) {
+    font-size: 12px;
+  }
+  :global(.ant-table-cell) {
+    padding: 4px 6px !important;
+  }
+  :global(.ant-table-thead > tr > th) {
+    padding: 4px 6px !important;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  :global(.ant-btn-sm) {
+    font-size: 12px;
+    padding: 0 4px;
+  }
+}
+
+.footerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}
+
+.footerDivider {
+  color: #d9d9d9;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  color: #d9d9d9;
+  margin-bottom: 16px;
+}
+
+.changePositive {
+  color: #ef5350;
+  font-weight: 500;
+}
+
+.changeNegative {
+  color: #26a69a;
+  font-weight: 500;
+}
+
+.modalBody {
+  padding: 8px 0;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.chartTitle {
+  font-size: 13px;
+  color: #666;
+}
+
+.backtestBtn {
+  background: #1677ff;
+}
+
+.chartArea {
+  height: 400px;
+}

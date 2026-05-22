@@ -1,0 +1,62 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 16px 16px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tableWrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.tableWrap :global(.ant-table) {
+  background-color: transparent;
+}
+
+.statusApproved {
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.statusPending {
+  color: var(--warning-color);
+  font-weight: 500;
+}
+
+.statusRejected {
+  color: var(--danger-color);
+  font-weight: 500;
+}
+
+.roleRoot {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.roleUser {
+  color: var(--text-secondary);
+}

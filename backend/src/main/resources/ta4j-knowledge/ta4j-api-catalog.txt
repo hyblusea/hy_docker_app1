@@ -1,0 +1,348 @@
+Ta4j v0.22.6 Complete API Catalog - ALL Available Classes
+=========================================================
+This file lists EVERY public class available in ta4j v0.22.6.
+When generating code, ONLY use classes listed in this catalog.
+If a class is NOT listed here, it does NOT exist in v0.22.6.
+
+== CORE INTERFACES AND BASE CLASSES ==
+
+import org.ta4j.core.Indicator;
+import org.ta4j.core.Rule;
+import org.ta4j.core.Strategy;
+import org.ta4j.core.Bar;
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.Trade;
+import org.ta4j.core.Position;
+import org.ta4j.core.TradingRecord;
+import org.ta4j.core.AnalysisCriterion;
+
+== NUM CLASSES ==
+
+import org.ta4j.core.num.Num;
+import org.ta4j.core.num.NumFactory;
+import org.ta4j.core.num.DecimalNum;
+import org.ta4j.core.num.DecimalNumFactory;
+import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.num.DoubleNumFactory;
+import org.ta4j.core.num.NaN;
+
+== STRATEGY ==
+
+import org.ta4j.core.BaseStrategy;
+// Constructor: new BaseStrategy(String name, Rule entryRule, Rule exitRule)
+// Constructor: new BaseStrategy(String name, Rule entryRule, Rule exitRule, int unstableBars)
+
+== BARSERIES ==
+
+import org.ta4j.core.BaseBarSeries;
+import org.ta4j.core.BaseBarSeriesBuilder;
+import org.ta4j.core.BarSeriesBuilder;
+
+== BACKTEST ==
+
+import org.ta4j.core.backtest.BarSeriesManager;
+
+== INDICATORS - ROOT LEVEL (org.ta4j.core.indicators) ==
+
+import org.ta4j.core.indicators.ATRIndicator;                    // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.AccelerationDecelerationIndicator; // (BarSeries, int barCountSMA, int barCountAO)
+import org.ta4j.core.indicators.AlligatorIndicator;               // (BarSeries, int jaw, int teeth, int lips)
+import org.ta4j.core.indicators.AwesomeOscillatorIndicator;       // (BarSeries, int barCountSMA1, int barCountSMA2)
+import org.ta4j.core.indicators.CCIIndicator;                     // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.CMOIndicator;                     // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.ChandelierExitLongIndicator;      // (BarSeries, int barCount, double k)
+import org.ta4j.core.indicators.ChandelierExitShortIndicator;     // (BarSeries, int barCount, double k)
+import org.ta4j.core.indicators.ChopIndicator;                    // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.ConnorsRSIIndicator;              // (BarSeries, int rsiBarCount, int streakBarCount, int pctRankBarCount)
+import org.ta4j.core.indicators.CoppockCurveIndicator;            // (BarSeries, int longRoC, int shortRoC, int wmaBarCount)
+import org.ta4j.core.indicators.DPOIndicator;                     // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.DistanceFromMAIndicator;          // (Indicator<Num> price, Indicator<Num> ma)
+import org.ta4j.core.indicators.FisherIndicator;                  // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.FractalHighIndicator;             // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.FractalLowIndicator;              // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.GatorOscillatorIndicator;         // (AlligatorIndicator alligator)
+import org.ta4j.core.indicators.IntraDayMomentumIndexIndicator;   // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.KRIIndicator;                     // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.KSTIndicator;                     // (BarSeries, int r1, int r2, int r3, int r4, int s1, int s2, int s3, int s4)
+import org.ta4j.core.indicators.KalmanFilterIndicator;            // (Indicator<Num> priceIndicator)
+import org.ta4j.core.indicators.MACDIndicator;                    // (Indicator<Num>, int shortBarCount, int longBarCount)
+import org.ta4j.core.indicators.MACDVIndicator;                   // (Indicator<Num>, int short, int long, int signal)
+import org.ta4j.core.indicators.MarketFacilitationIndexIndicator; // (BarSeries series)
+import org.ta4j.core.indicators.MassIndexIndicator;               // (BarSeries, int emaBarCount, int sumBarCount)
+import org.ta4j.core.indicators.NetMomentumIndicator;             // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.PPOIndicator;                     // (Indicator<Num>, int shortBarCount, int longBarCount)
+import org.ta4j.core.indicators.PVOIndicator;                     // (Indicator<Num>, int shortBarCount, int longBarCount)
+import org.ta4j.core.indicators.ParabolicSarIndicator;            // (BarSeries, double accelerationStart, double accelerationIncrement, double accelerationMax)
+import org.ta4j.core.indicators.PriceChannel;                     // (BarSeries, int barCountUpper, int barCountLower)
+import org.ta4j.core.indicators.RAVIIndicator;                    // (Indicator<Num>, int shortSmaBarCount, int longSmaBarCount)
+import org.ta4j.core.indicators.ROCIndicator;                     // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.RSIIndicator;                     // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.RWIHighIndicator;                 // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.RWILowIndicator;                  // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.RecentSwingIndicator;             // (Indicator<Num> price, int surroundingBars)
+import org.ta4j.core.indicators.SchaffTrendCycleIndicator;        // (BarSeries, int cycleLength, int firstSmoothing, int secondSmoothing)
+import org.ta4j.core.indicators.SqueezeProIndicator;              // (BarSeries, int bbLength, double bbMultFactor, int kcLength, double kcMultFactor)
+import org.ta4j.core.indicators.StochasticIndicator;              // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.StochasticOscillatorKIndicator;   // (BarSeries series, int barCount)
+import org.ta4j.core.indicators.StochasticOscillatorDIndicator;   // (StochasticOscillatorKIndicator k) - D line is SMA(3) of K by default
+import org.ta4j.core.indicators.StochasticRSIIndicator;           // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.TrueStrengthIndexIndicator;       // (Indicator<Num>, int firstSmoothing, int secondSmoothing)
+import org.ta4j.core.indicators.UlcerIndexIndicator;              // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.UltimateOscillatorIndicator;      // (Indicator<Num> high, Indicator<Num> low, Indicator<Num> close, int short, int middle, int long)
+import org.ta4j.core.indicators.VortexIndicator;                  // (Indicator<Num> high, Indicator<Num> low, Indicator<Num> close, int barCount)
+import org.ta4j.core.indicators.WilliamsRIndicator;               // (BarSeries series, int barCount)
+
+== INDICATORS - ADX (org.ta4j.core.indicators.adx) ==
+
+import org.ta4j.core.indicators.adx.ADXIndicator;     // (BarSeries, int diBarCount, int adxBarCount) or (BarSeries, int barCount)
+import org.ta4j.core.indicators.adx.DXIndicator;      // (BarSeries, int barCount)
+import org.ta4j.core.indicators.adx.MinusDIIndicator;  // (BarSeries, int barCount)
+import org.ta4j.core.indicators.adx.MinusDMIndicator;  // (BarSeries)
+import org.ta4j.core.indicators.adx.PlusDIIndicator;   // (BarSeries, int barCount)
+import org.ta4j.core.indicators.adx.PlusDMIndicator;   // (BarSeries)
+
+== INDICATORS - AROON (org.ta4j.core.indicators.aroon) ==
+
+import org.ta4j.core.indicators.aroon.AroonDownIndicator;        // (BarSeries, int barCount)
+import org.ta4j.core.indicators.aroon.AroonOscillatorIndicator;  // (BarSeries, int barCount)
+import org.ta4j.core.indicators.aroon.AroonUpIndicator;          // (BarSeries, int barCount)
+import org.ta4j.core.indicators.aroon.AroonFacade;               // (BarSeries, int barCount)
+
+== INDICATORS - AVERAGES (org.ta4j.core.indicators.averages) ==
+
+import org.ta4j.core.indicators.averages.ATMAIndicator;      // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.DMAIndicator;       // (Indicator<Num>, int barCount, int displacement)
+import org.ta4j.core.indicators.averages.DoubleEMAIndicator;  // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.EDMAIndicator;      // (Indicator<Num>, int barCount, int displacement)
+import org.ta4j.core.indicators.averages.EMAIndicator;       // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.HMAIndicator;       // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.JMAIndicator;       // (Indicator<Num>, int barCount, double phase, double power)
+import org.ta4j.core.indicators.averages.KAMAIndicator;      // (Indicator<Num>, int barCountEffectiveRatio, int barCountFast, int barCountSlow)
+import org.ta4j.core.indicators.averages.KiJunV2Indicator;   // (Indicator<Num> high, Indicator<Num> low, int barCount)
+import org.ta4j.core.indicators.averages.LSMAIndicator;      // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.LWMAIndicator;      // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.MCGinleyMAIndicator; // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.MMAIndicator;       // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.SGMAIndicator;      // (Indicator<Num>, int barCount, int polynomialOrder)
+import org.ta4j.core.indicators.averages.SMAIndicator;       // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.SMMAIndicator;      // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.TMAIndicator;       // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.TripleEMAIndicator;  // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.VIDYAIndicator;     // (Indicator<Num>, int cmoPeriod, int vidyaPeriod)
+import org.ta4j.core.indicators.averages.VWMAIndicator;      // (Indicator<Num> price, int barCount)
+import org.ta4j.core.indicators.averages.WMAIndicator;       // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.WildersMAIndicator;  // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.averages.ZLEMAIndicator;     // (Indicator<Num>, int barCount)
+
+== INDICATORS - BOLLINGER (org.ta4j.core.indicators.bollinger) ==
+
+import org.ta4j.core.indicators.bollinger.BollingerBandFacade;          // (BarSeries, int barCount, Number k)
+import org.ta4j.core.indicators.bollinger.BollingerBandWidthIndicator;  // (BollingerBandsUpper, BollingerBandsMiddle, BollingerBandsLower)
+import org.ta4j.core.indicators.bollinger.BollingerBandsLowerIndicator; // (BollingerBandsMiddle, Indicator<Num> deviation, Num k)
+import org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator; // (Indicator<Num>)
+import org.ta4j.core.indicators.bollinger.BollingerBandsUpperIndicator; // (BollingerBandsMiddle, Indicator<Num> deviation, Num k)
+import org.ta4j.core.indicators.bollinger.PercentBIndicator;            // (Indicator<Num>, int barCount, double k)
+
+== INDICATORS - CANDLESTICK (org.ta4j.core.indicators.candles) ==
+
+import org.ta4j.core.indicators.candles.BearishEngulfingIndicator;
+import org.ta4j.core.indicators.candles.BearishHaramiIndicator;
+import org.ta4j.core.indicators.candles.BearishKickerIndicator;
+import org.ta4j.core.indicators.candles.BearishMarubozuIndicator;
+import org.ta4j.core.indicators.candles.BullishEngulfingIndicator;
+import org.ta4j.core.indicators.candles.BullishHaramiIndicator;
+import org.ta4j.core.indicators.candles.BullishKickerIndicator;
+import org.ta4j.core.indicators.candles.BullishMarubozuIndicator;
+import org.ta4j.core.indicators.candles.DarkCloudCoverIndicator;
+import org.ta4j.core.indicators.candles.DarkCloudIndicator;
+import org.ta4j.core.indicators.candles.DojiIndicator;
+import org.ta4j.core.indicators.candles.EveningStarIndicator;
+import org.ta4j.core.indicators.candles.HammerIndicator;
+import org.ta4j.core.indicators.candles.HangingManIndicator;
+import org.ta4j.core.indicators.candles.InvertedHammerIndicator;
+import org.ta4j.core.indicators.candles.LowerShadowIndicator;
+import org.ta4j.core.indicators.candles.MorningStarIndicator;
+import org.ta4j.core.indicators.candles.PiercingIndicator;
+import org.ta4j.core.indicators.candles.PiercingLineIndicator;
+import org.ta4j.core.indicators.candles.RealBodyIndicator;
+import org.ta4j.core.indicators.candles.ShootingStarIndicator;
+import org.ta4j.core.indicators.candles.ThreeBlackCrowsIndicator;
+import org.ta4j.core.indicators.candles.ThreeInsideDownIndicator;
+import org.ta4j.core.indicators.candles.ThreeInsideUpIndicator;
+import org.ta4j.core.indicators.candles.ThreeWhiteSoldiersIndicator;
+import org.ta4j.core.indicators.candles.UpperShadowIndicator;
+// All candlestick indicators take (BarSeries series) as constructor parameter
+
+== INDICATORS - DONCHIAN (org.ta4j.core.indicators.donchian) ==
+
+import org.ta4j.core.indicators.donchian.DonchianChannelFacade;        // (BarSeries, int barCount)
+import org.ta4j.core.indicators.donchian.DonchianChannelLowerIndicator; // (BarSeries, int barCount)
+import org.ta4j.core.indicators.donchian.DonchianChannelMiddleIndicator; // (BarSeries, int barCount)
+import org.ta4j.core.indicators.donchian.DonchianChannelUpperIndicator; // (BarSeries, int barCount)
+
+== INDICATORS - ICHIMOKU (org.ta4j.core.indicators.ichimoku) ==
+
+import org.ta4j.core.indicators.ichimoku.IchimokuChikouSpanIndicator;  // (BarSeries, int timeDelay)
+import org.ta4j.core.indicators.ichimoku.IchimokuKijunSenIndicator;    // (BarSeries, int barCount)
+import org.ta4j.core.indicators.ichimoku.IchimokuSenkouSpanAIndicator; // (BarSeries, IchimokuTenkanSen, IchimokuKijunSen, int offset)
+import org.ta4j.core.indicators.ichimoku.IchimokuSenkouSpanBIndicator; // (BarSeries, int barCount, int offset)
+import org.ta4j.core.indicators.ichimoku.IchimokuTenkanSenIndicator;   // (BarSeries, int barCount)
+
+== INDICATORS - KELTNER (org.ta4j.core.indicators.keltner) ==
+
+import org.ta4j.core.indicators.keltner.KeltnerChannelFacade;          // (BarSeries, int emaCount, int atrCount, Number k)
+import org.ta4j.core.indicators.keltner.KeltnerChannelLowerIndicator;  // (KeltnerChannelMiddle, ATRIndicator, double ratio)
+import org.ta4j.core.indicators.keltner.KeltnerChannelMiddleIndicator; // (Indicator<Num>, int barCountEMA)
+import org.ta4j.core.indicators.keltner.KeltnerChannelUpperIndicator;  // (KeltnerChannelMiddle, ATRIndicator, double ratio)
+
+== INDICATORS - HELPERS (org.ta4j.core.indicators.helpers) ==
+
+import org.ta4j.core.indicators.helpers.AmountIndicator;               // (BarSeries)
+import org.ta4j.core.indicators.helpers.AverageIndicator;              // (Indicator<Num>... indicators)
+import org.ta4j.core.indicators.helpers.CloseLocationValueIndicator;   // (BarSeries)
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;           // (BarSeries)
+import org.ta4j.core.indicators.helpers.CombineIndicator;              // (Indicator<Num>, Indicator<Num>, BiFunction<Num,Num,Num>)
+import org.ta4j.core.indicators.helpers.ConstantIndicator;             // (BarSeries, Num value)
+import org.ta4j.core.indicators.helpers.ConvergenceDivergenceIndicator; // (Indicator<Num>, Indicator<Num>, int barCount, ...)
+import org.ta4j.core.indicators.helpers.CrossIndicator;                // (Indicator<Num>, Indicator<Num>)
+import org.ta4j.core.indicators.helpers.DateTimeIndicator;             // (BarSeries)
+import org.ta4j.core.indicators.helpers.DifferenceIndicator;           // (Indicator<Num>)
+import org.ta4j.core.indicators.helpers.DifferencePercentageIndicator; // (Indicator<Num>, Num threshold)
+import org.ta4j.core.indicators.helpers.GainIndicator;                 // (Indicator<Num>)
+import org.ta4j.core.indicators.helpers.HighestValueIndicator;         // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.helpers.HighPriceIndicator;            // (BarSeries)
+import org.ta4j.core.indicators.helpers.LossIndicator;                 // (Indicator<Num>)
+import org.ta4j.core.indicators.helpers.LowestValueIndicator;          // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.helpers.LowPriceIndicator;             // (BarSeries)
+import org.ta4j.core.indicators.helpers.MedianPriceIndicator;          // (BarSeries)
+import org.ta4j.core.indicators.helpers.OpenPriceIndicator;            // (BarSeries)
+import org.ta4j.core.indicators.helpers.PercentRankIndicator;          // (Indicator<Num>, int period)
+import org.ta4j.core.indicators.helpers.PreviousValueIndicator;        // (Indicator<Num>, int n)
+import org.ta4j.core.indicators.helpers.RunningTotalIndicator;         // (Indicator<Num>, int barCount)
+import org.ta4j.core.indicators.helpers.SumIndicator;                  // (Indicator<Num>... summands)
+import org.ta4j.core.indicators.helpers.TRIndicator;                   // (BarSeries)
+import org.ta4j.core.indicators.helpers.TradeCountIndicator;           // (BarSeries)
+import org.ta4j.core.indicators.helpers.TypicalPriceIndicator;         // (BarSeries)
+import org.ta4j.core.indicators.helpers.VolumeIndicator;               // (BarSeries, int barCount)
+
+== INDICATORS - VOLUME (org.ta4j.core.indicators.volume) ==
+
+import org.ta4j.core.indicators.volume.AccumulationDistributionIndicator;   // (BarSeries)
+import org.ta4j.core.indicators.volume.AnchoredVWAPIndicator;              // (BarSeries, int anchorIndex)
+import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;          // (BarSeries, int barCount)
+import org.ta4j.core.indicators.volume.ChaikinOscillatorIndicator;         // (BarSeries, int shortBarCount, int longBarCount)
+import org.ta4j.core.indicators.volume.ForceIndexIndicator;                // (Indicator<Num> close, Indicator<Num> volume, int barCount)
+import org.ta4j.core.indicators.volume.MoneyFlowIndexIndicator;            // (BarSeries, int barCount)
+import org.ta4j.core.indicators.volume.NVIIndicator;                       // (BarSeries)
+import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;           // (BarSeries)
+import org.ta4j.core.indicators.volume.PVIIndicator;                       // (BarSeries)
+import org.ta4j.core.indicators.volume.ROCVIndicator;                      // (BarSeries, int barCount)
+import org.ta4j.core.indicators.volume.VWAPIndicator;                      // (BarSeries, int barCount)
+import org.ta4j.core.indicators.volume.VWAPStandardDeviationIndicator;     // (AbstractVWAPIndicator)
+
+== INDICATORS - TREND (org.ta4j.core.indicators.trend) ==
+
+import org.ta4j.core.indicators.trend.DownTrendIndicator;  // (BarSeries, int unstableBars, double strengthThreshold)
+import org.ta4j.core.indicators.trend.UpTrendIndicator;    // (BarSeries, int unstableBars, double strengthThreshold)
+
+== INDICATORS - RENKO (org.ta4j.core.indicators.renko) ==
+
+import org.ta4j.core.indicators.renko.RenkoDownIndicator;  // (Indicator<Num> price, double pointSize, int brickCount)
+import org.ta4j.core.indicators.renko.RenkoUpIndicator;    // (Indicator<Num> price, double pointSize, int brickCount)
+import org.ta4j.core.indicators.renko.RenkoXIndicator;     // (Indicator<Num> price, double pointSize, int brickCount)
+
+== INDICATORS - ZIGZAG (org.ta4j.core.indicators.zigzag) ==
+
+import org.ta4j.core.indicators.zigzag.ZigZagStateIndicator;       // (Indicator<Num> price, Indicator<Num> reversalAmount)
+import org.ta4j.core.indicators.zigzag.ZigZagPivotHighIndicator;   // (ZigZagStateIndicator)
+import org.ta4j.core.indicators.zigzag.ZigZagPivotLowIndicator;    // (ZigZagStateIndicator)
+
+== RULES (org.ta4j.core.rules) ==
+
+import org.ta4j.core.rules.AndRule;                          // (Rule... rules)
+import org.ta4j.core.rules.AndWithThresholdRule;             // (int threshold, Rule... rules)
+import org.ta4j.core.rules.AverageTrueRangeStopGainRule;     // (BarSeries, int barCount, Number factor)
+import org.ta4j.core.rules.AverageTrueRangeStopLossRule;     // (BarSeries, int barCount, Number factor)
+import org.ta4j.core.rules.AverageTrueRangeTrailingStopGainRule; // (BarSeries, int barCount, Number factor)
+import org.ta4j.core.rules.AverageTrueRangeTrailingStopLossRule; // (BarSeries, int barCount, Number factor)
+import org.ta4j.core.rules.BaseVolatilityStopGainRule;       // (BarSeries, int barCount, Number factor)
+import org.ta4j.core.rules.BaseVolatilityStopLossRule;       // (BarSeries, int barCount, Number factor)
+import org.ta4j.core.rules.BooleanIndicatorRule;             // (Indicator<Boolean>)
+import org.ta4j.core.rules.BooleanRule;                     // (boolean)
+import org.ta4j.core.rules.ChainRule;                       // (Rule entryRule, Rule exitRule, int barCount)
+import org.ta4j.core.rules.CrossedDownIndicatorRule;        // (Indicator<Num> first, Indicator<Num> second)
+import org.ta4j.core.rules.CrossedUpIndicatorRule;          // (Indicator<Num> first, Indicator<Num> second)
+import org.ta4j.core.rules.DayOfWeekRule;                   // (DayOfWeek... daysOfWeek)
+import org.ta4j.core.rules.FixedAmountStopGainRule;         // (BarSeries, Number amount)
+import org.ta4j.core.rules.FixedAmountStopLossRule;         // (BarSeries, Number amount)
+import org.ta4j.core.rules.FixedRule;                       // (boolean... values)
+import org.ta4j.core.rules.HourOfDayRule;                   // (int... hours)
+import org.ta4j.core.rules.InPipeRule;                      // (Indicator<Num> ref, Number lo, Number hi)
+import org.ta4j.core.rules.InSlopeRule;                     // (Indicator<Num> ref, int barCount, Number slope)
+import org.ta4j.core.rules.IsEqualRule;                     // (Indicator<Num> first, Indicator<Num> second)
+import org.ta4j.core.rules.IsFallingRule;                   // (Indicator<Num> ref, int barCount)
+import org.ta4j.core.rules.IsHighestRule;                   // (Indicator<Num> ref, int barCount)
+import org.ta4j.core.rules.IsLowestRule;                    // (Indicator<Num> ref, int barCount)
+import org.ta4j.core.rules.IsRisingRule;                    // (Indicator<Num> ref, int barCount)
+import org.ta4j.core.rules.JustOnceRule;                    // (Rule rule)
+import org.ta4j.core.rules.MinuteOfHourRule;                // (int... minutes)
+import org.ta4j.core.rules.MomentumStateRule;               // (Indicator<Num>, Number positiveThreshold, Number negativeThreshold)
+import org.ta4j.core.rules.NotRule;                         // (Rule rule)
+import org.ta4j.core.rules.OpenPositionDurationRule;        // (BarSeries, int barCount)
+import org.ta4j.core.rules.OpenedPositionMinimumBarCountRule; // (BarSeries, int barCount)
+import org.ta4j.core.rules.OrRule;                          // (Rule... rules)
+import org.ta4j.core.rules.OverIndicatorRule;               // (Indicator<Num> first, Indicator<Num> second)
+import org.ta4j.core.rules.OverOrEqualIndicatorRule;        // (Indicator<Num> first, Indicator<Num> second)
+import org.ta4j.core.rules.RiskRewardRatioRule;             // (BarSeries, Number riskRewardRatio)
+import org.ta4j.core.rules.StopGainRule;                    // (BarSeries, Number gainPercentage)
+import org.ta4j.core.rules.StopLossRule;                    // (BarSeries, Number lossPercentage)
+import org.ta4j.core.rules.TimeRangeRule;                   // (LocalTime startTime, LocalTime endTime)
+import org.ta4j.core.rules.TrailingStopGainRule;            // (BarSeries, Number gainPercentage)
+import org.ta4j.core.rules.TrailingStopLossRule;            // (BarSeries, Number lossPercentage)
+import org.ta4j.core.rules.UnderIndicatorRule;              // (Indicator<Num> first, Indicator<Num> second)
+import org.ta4j.core.rules.UnderOrEqualIndicatorRule;       // (Indicator<Num> first, Indicator<Num> second)
+import org.ta4j.core.rules.VoteRule;                        // (int threshold, Rule... rules)
+import org.ta4j.core.rules.WaitForRule;                     // (int numberOfBars)
+import org.ta4j.core.rules.XorRule;                         // (Rule rule1, Rule rule2)
+
+== COMMON STRATEGY PATTERNS ==
+
+// KDJ Golden Cross / Death Cross Strategy:
+StochasticOscillatorKIndicator k = new StochasticOscillatorKIndicator(series, 9);
+StochasticOscillatorDIndicator d = new StochasticOscillatorDIndicator(k);  // D line is SMA(3) of K by default
+Rule entryRule = new CrossedUpIndicatorRule(k, d);    // K crosses above D (golden cross)
+Rule exitRule = new CrossedDownIndicatorRule(k, d);   // K crosses below D (death cross)
+
+// MACD Strategy:
+EMAIndicator shortEma = new EMAIndicator(closePrice, 12);
+EMAIndicator longEma = new EMAIndicator(closePrice, 26);
+MACDIndicator macd = new MACDIndicator(closePrice, 12, 26);
+EMAIndicator signal = new EMAIndicator(macd, 9);
+Rule entryRule = new CrossedUpIndicatorRule(macd, signal);
+Rule exitRule = new CrossedDownIndicatorRule(macd, signal);
+
+// RSI Strategy:
+RSIIndicator rsi = new RSIIndicator(closePrice, 14);
+Rule entryRule = new UnderIndicatorRule(rsi, 30);     // RSI below 30 (oversold)
+Rule exitRule = new OverIndicatorRule(rsi, 70);       // RSI above 70 (overbought)
+
+// Bollinger Bands Strategy:
+SMAIndicator middle = new SMAIndicator(closePrice, 20);
+BollingerBandsMiddleIndicator bbMiddle = new BollingerBandsMiddleIndicator(middle);
+// Use BollingerBandFacade for easier construction:
+BollingerBandFacade bb = new BollingerBandFacade(series, 20, 2);
+Rule entryRule = new UnderIndicatorRule(closePrice, bb.lower());  // Price below lower band
+Rule exitRule = new OverIndicatorRule(closePrice, bb.upper());    // Price above upper band
+
+// Moving Average Crossover Strategy:
+SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
+SMAIndicator longSma = new SMAIndicator(closePrice, 20);
+Rule entryRule = new CrossedUpIndicatorRule(shortSma, longSma);
+Rule exitRule = new CrossedDownIndicatorRule(shortSma, longSma);
+
+// ADX Trend Strength Strategy:
+ADXIndicator adx = new ADXIndicator(series, 14);
+PlusDIIndicator plusDI = new PlusDIIndicator(series, 14);
+MinusDIIndicator minusDI = new MinusDIIndicator(series, 14);
+Rule entryRule = new AndRule(new OverIndicatorRule(adx, 25), new CrossedUpIndicatorRule(plusDI, minusDI));
+Rule exitRule = new CrossedDownIndicatorRule(plusDI, minusDI);

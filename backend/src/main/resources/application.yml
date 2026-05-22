@@ -1,0 +1,98 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    session:
+      timeout: 24h
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    max-connections: 300
+    connection-timeout: 60s
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+      - org.springframework.ai.autoconfigure.openai.OpenAiConnectionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+  application:
+    name: tradingx-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/tradingx?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&cachePrepStmts=true&useServerPrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: tradingx
+    hikari:
+      maximum-pool-size: 300
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 1000
+        order_inserts: true
+        order_updates: true
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+deepseek:
+  user-token: ${DEEPSEEK_USER_TOKEN:}
+
+mimo:
+  user-id: ${MIMO_USER_ID:}
+  xiaomichatbot-ph: ${MIMO_XIAOMICHATBOT_PH:}
+  service-token: ${MIMO_SERVICE_TOKEN:}
+
+tushare:
+  api-url: https://api.tushare.pro
+  token: ${TUSHARE_TOKEN:}
+  stock-basic-csv: /app/static-data/tushare_stock_basic.csv
+
+akshare:
+  base-url: http://127.0.0.1:8081
+
+ft:
+  share:
+    base-url: https://market.ft.tech/app
+    client-name: ft-claw
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.tradingx: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql: WARN
+
+ml:
+  training:
+    python-path: python
+    script-path: ml_training/train.py
+    output-path: models/
+    cpu-limit: 0.8
+  prediction:
+    model-path: models/prediction_model.pt
